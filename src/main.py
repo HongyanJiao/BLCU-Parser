@@ -12,7 +12,6 @@ import vocabulary
 import nkutil
 import parse_nk
 tokens = parse_nk
-
 def torch_load(load_path):
     if parse_nk.use_cuda:
         return torch.load(load_path)
@@ -60,7 +59,7 @@ def make_hparams():
         relu_dropout=0.1,
         residual_dropout=0.2,
 
-        use_tags=False,
+        use_tags=True,
         use_words=True,
         use_chars_lstm=True,
         use_elmo=False,
@@ -563,8 +562,8 @@ def main():
     subparser.add_argument("--numpy-seed", type=int)
     subparser.add_argument("--model-path-base", default='/home/jessica/parser/bert_parser/models',required=False)
     subparser.add_argument("--evalb-dir", default="../EVALB/")
-    subparser.add_argument("--train-path", default="/home/jessica/parser/data/train.small")
-    subparser.add_argument("--dev-path", default="/home/jessica/parser/data/dev.small")
+    subparser.add_argument("--train-path", default="../data/train.small")
+    subparser.add_argument("--dev-path", default="../data/dev.small")
     subparser.add_argument("--batch-size", type=int, default=250)
     subparser.add_argument("--subbatch-max-tokens", type=int, default=2000)
     subparser.add_argument("--eval-batch-size", type=int, default=100)

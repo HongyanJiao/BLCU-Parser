@@ -132,7 +132,7 @@ class LeafParseNode(ParseNode):
         return LeafTreebankNode(self.tag, self.word)
 
 
-def tree_from_str(treebank, strip_top=True, strip_spmrl_features=True):
+def tree_from_str(treebank, strip_top=False, strip_spmrl_features=True):
     # Features bounded by `##` may contain spaces, so if we strip the features
     # we need to do so prior to tokenization
     if strip_spmrl_features:
