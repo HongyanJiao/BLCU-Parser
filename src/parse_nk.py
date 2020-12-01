@@ -17,10 +17,10 @@ else:
     torch_t = torch
     from torch import from_numpy
 
-# import pyximport
-# pyximport.install(setup_args={"include_dirs": np.get_include()})
-# import chart_helper
-import chart_decoder as chart_helper
+import pyximport
+pyximport.install(setup_args={"include_dirs": np.get_include()})
+import chart_helper
+# import chart_decoder as chart_helper
 import nkutil
 
 import trees
