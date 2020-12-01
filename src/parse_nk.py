@@ -1,11 +1,12 @@
 import functools
+import sys
 
 import numpy as np
 
 import torch
 import torch.nn as nn
 import torch.nn.init as init
-
+DTYPE = torch.uint8 if float(sys.version[:3]) < 3.7 else torch.bool
 use_cuda = torch.cuda.is_available()
 if use_cuda:
     torch_t = torch.cuda
@@ -296,7 +297,7 @@ class MultiHeadAttention(nn.Module):
         q_padded = q_s.new_zeros((n_head, mb_size, len_padded, d_k))
         k_padded = k_s.new_zeros((n_head, mb_size, len_padded, d_k))
         v_padded = v_s.new_zeros((n_head, mb_size, len_padded, d_v))
-        invalid_mask = q_s.new_ones((mb_size, len_padded), dtype=torch.uint8)
+        invalid_mask = q_s.new_ones((mb_size, len_padded), dtype=DTYPE)
 
         for i, (start, end) in enumerate(zip(batch_idxs.boundaries_np[:-1], batch_idxs.boundaries_np[1:])):
             q_padded[:,i,:end-start,:] = q_s[:,start:end,:]
@@ -1018,7 +1019,7 @@ class NKChartParser(nn.Module):
             features = all_encoder_layers[-1]
 
             if self.encoder is not None:
-                features_packed = features.masked_select(all_word_end_mask.to(torch.uint8).unsqueeze(-1)).reshape(-1, features.shape[-1])
+                features_packed = features.masked_select(all_word_end_mask.to(DTYPE).unsqueeze(-1)).reshape(-1, features.shape[-1])
 
                 # For now, just project the features from the last word piece in each word
                 extra_content_annotations = self.project_bert(features_packed)
@@ -1047,8 +1048,8 @@ class NKChartParser(nn.Module):
         else:
             assert self.bert is not None
             features = self.project_bert(features)
-            fencepost_annotations_start = features.masked_select(all_word_start_mask.to(torch.uint8).unsqueeze(-1)).reshape(-1, features.shape[-1])
-            fencepost_annotations_end = features.masked_select(all_word_end_mask.to(torch.uint8).unsqueeze(-1)).reshape(-1, features.shape[-1])
+            fencepost_annotations_start = features.masked_select(all_word_start_mask.to(DTYPE).unsqueeze(-1)).reshape(-1, features.shape[-1])
+            fencepost_annotations_end = features.masked_select(all_word_end_mask.to(DTYPE).unsqueeze(-1)).reshape(-1, features.shape[-1])
             if self.f_tag is not None:
                 tag_annotations = fencepost_annotations_end
 
