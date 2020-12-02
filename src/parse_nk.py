@@ -6,7 +6,10 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.init as init
-DTYPE = torch.uint8 if float(sys.version[:3]) < 3.7 else torch.bool
+print('sys:', sys.version)
+# DTYPE = torch.uint8 if float(sys.version[:3]) < 3.7 else torch.bool
+DTYPE = torch.bool
+print('type:', DTYPE)
 use_cuda = torch.cuda.is_available()
 if use_cuda:
     torch_t = torch.cuda
@@ -17,10 +20,10 @@ else:
     torch_t = torch
     from torch import from_numpy
 
-import pyximport
-pyximport.install(setup_args={"include_dirs": np.get_include()})
-import chart_helper
-# import chart_decoder as chart_helper
+# import pyximport
+# pyximport.install(setup_args={"include_dirs": np.get_include()})
+# import chart_helper
+import chart_decoder as chart_helper
 import nkutil
 
 import trees
