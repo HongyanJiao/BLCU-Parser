@@ -59,10 +59,9 @@ def make_hparams():
         relu_dropout=0.1,
         residual_dropout=0.2,
 
-        use_tags=True,
-        use_words=True,
-        use_chars_lstm=True,
-        use_elmo=False,
+        use_tags=False,
+        use_words=False,
+        use_chars_lstm=False,
         use_bert=False,
         use_bert_only=False,
         predict_tags=False,
@@ -76,7 +75,7 @@ def make_hparams():
         char_lstm_input_dropout=0.2,
         elmo_dropout=0.5, # Note that this semi-stacks with morpho_emb_dropout!
 
-        bert_model="bert-base-uncased",
+        bert_model="bert-base-chinese",
         bert_do_lower_case=True,
         bert_transliterate="",
         )
@@ -512,7 +511,7 @@ def main():
     subparser.add_argument("--evalb-dir", default="../EVALB/")
     subparser.add_argument("--train-path", default="../data/train.small")
     subparser.add_argument("--dev-path", default="../data/dev.small")
-    subparser.add_argument("--batch-size", type=int, default=250)
+    subparser.add_argument("--batch-size", type=int, default=32)
     subparser.add_argument("--subbatch-max-tokens", type=int, default=2000)
     subparser.add_argument("--eval-batch-size", type=int, default=100)
     subparser.add_argument("--epochs", type=int)

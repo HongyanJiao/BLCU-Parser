@@ -1,15 +1,11 @@
 import functools
 import sys
-
 import numpy as np
-
 import torch
 import torch.nn as nn
 import torch.nn.init as init
-print('sys:', sys.version)
 # DTYPE = torch.uint8 if float(sys.version[:3]) < 3.7 else torch.bool
 DTYPE = torch.bool
-print('type:', DTYPE)
 use_cuda = torch.cuda.is_available()
 if use_cuda:
     torch_t = torch.cuda
@@ -20,10 +16,10 @@ else:
     torch_t = torch
     from torch import from_numpy
 
-# import pyximport
-# pyximport.install(setup_args={"include_dirs": np.get_include()})
-# import chart_helper
-import chart_decoder as chart_helper
+import pyximport
+pyximport.install(setup_args={"include_dirs": np.get_include()})
+import chart_helper
+# import chart_decoder as chart_helper
 import nkutil
 
 import trees
@@ -563,13 +559,7 @@ class CharacterLSTM(nn.Module):
         return res
 
 # %%
-def get_elmo_class():
-    # Avoid a hard dependency by only importing Elmo if it's being used
-    from allennlp.modules.elmo import Elmo
-    return Elmo
-
-# %%
-def get_bert(bert_model, bert_do_lower_case):
+def get_bert_backup(bert_model, bert_do_lower_case):
     # Avoid a hard dependency on BERT by only importing it if it's being used
     from pytorch_pretrained_bert import BertTokenizer, BertModel
     if bert_model.endswith('.tar.gz'):
@@ -578,6 +568,17 @@ def get_bert(bert_model, bert_do_lower_case):
         tokenizer = BertTokenizer.from_pretrained(bert_model, do_lower_case=bert_do_lower_case)
     bert = BertModel.from_pretrained(bert_model)
     return tokenizer, bert
+def get_bert(bert_model, bert_do_lower_case):
+    # Avoid a hard dependency on BERT by only importing it if it's being used
+    import transformers
+    from transformers import BertTokenizer, BertModel
+    if bert_model.endswith('.tar.gz'):
+        tokenizer = BertTokenizer.from_pretrained(bert_model.replace('.tar.gz', '-vocab.txt'), do_lower_case=bert_do_lower_case)
+    else:
+        tokenizer = BertTokenizer.from_pretrained(bert_model, do_lower_case=bert_do_lower_case)
+    bert = BertModel.from_pretrained(bert_model)
+    return tokenizer, bert
+
 
 # %%
 
@@ -673,16 +674,15 @@ class NKChartParser(nn.Module):
         self.use_tags = hparams.use_tags
 
         self.morpho_emb_dropout = None
-        if hparams.use_chars_lstm or hparams.use_elmo or hparams.use_bert or hparams.use_bert_only:
+        if hparams.use_chars_lstm or hparams.use_bert or hparams.use_bert_only:
             self.morpho_emb_dropout = hparams.morpho_emb_dropout
         else:
             assert self.emb_types, "Need at least one of: use_tags, use_words, use_chars_lstm, use_elmo, use_bert, use_bert_only"
 
         self.char_encoder = None
-        self.elmo = None
+
         self.bert = None
         if hparams.use_chars_lstm:
-            assert not hparams.use_elmo, "use_chars_lstm and use_elmo are mutually exclusive"
             assert not hparams.use_bert, "use_chars_lstm and use_bert are mutually exclusive"
             assert not hparams.use_bert_only, "use_chars_lstm and use_bert_only are mutually exclusive"
             self.char_encoder = CharacterLSTM(
@@ -691,27 +691,6 @@ class NKChartParser(nn.Module):
                 self.d_content,
                 char_dropout=hparams.char_lstm_input_dropout,
             )
-        elif hparams.use_elmo:
-            assert not hparams.use_bert, "use_elmo and use_bert are mutually exclusive"
-            assert not hparams.use_bert_only, "use_elmo and use_bert_only are mutually exclusive"
-            self.elmo = get_elmo_class()(
-                options_file="data/elmo_2x4096_512_2048cnn_2xhighway_options.json",
-                weight_file="data/elmo_2x4096_512_2048cnn_2xhighway_weights.hdf5",
-                num_output_representations=1,
-                requires_grad=False,
-                do_layer_norm=False,
-                keep_sentence_boundaries=True,
-                dropout=hparams.elmo_dropout,
-                )
-            d_elmo_annotations = 1024
-
-            # Don't train gamma parameter for ELMo - the projection can do any
-            # necessary scaling
-            self.elmo.scalar_mix_0.gamma.requires_grad = False
-
-            # Reshapes the embeddings to match the model dimension, and making
-            # the projection trainable appears to improve parsing accuracy
-            self.project_elmo = nn.Linear(d_elmo_annotations, self.d_content, bias=False)
         elif hparams.use_bert or hparams.use_bert_only:
             self.bert_tokenizer, self.bert = get_bert(hparams.bert_model, hparams.bert_do_lower_case)
             if hparams.bert_transliterate:
@@ -789,11 +768,8 @@ class NKChartParser(nn.Module):
         if 'use_chars_concat' in hparams and hparams['use_chars_concat']:
             raise NotImplementedError("Support for use_chars_concat has been removed")
         if 'sentence_max_len' not in hparams:
-            hparams['sentence_max_len'] = 300
-        if 'use_elmo' not in hparams:
-            hparams['use_elmo'] = False
-        if 'elmo_dropout' not in hparams:
-            hparams['elmo_dropout'] = 0.5
+            hparams['sentence_max_len'] = 512
+
         if 'use_bert' not in hparams:
             hparams['use_bert'] = False
         if 'use_bert_only' not in hparams:
@@ -807,12 +783,12 @@ class NKChartParser(nn.Module):
         res = cls(**spec)
         if use_cuda:
             res.cpu()
-        if not hparams['use_elmo']:
-            res.load_state_dict(model)
-        else:
-            state = {k: v for k,v in res.state_dict().items() if k not in model}
-            state.update(model)
-            res.load_state_dict(state)
+        # if not hparams['use_elmo']:
+        res.load_state_dict(model)
+        # else:
+        #     state = {k: v for k,v in res.state_dict().items() if k not in model}
+        #     state.update(model)
+        #     res.load_state_dict(state)
         if use_cuda:
             res.cuda()
         return res
@@ -914,45 +890,6 @@ class NKChartParser(nn.Module):
             assert i == packed_len
 
             extra_content_annotations = self.char_encoder(char_idxs_encoder, word_lens_encoder, batch_idxs)
-        elif self.elmo is not None:
-            # See https://github.com/allenai/allennlp/blob/c3c3549887a6b1fb0bc8abf77bc820a3ab97f788/allennlp/data/token_indexers/elmo_indexer.py#L61
-            # ELMO_START_SENTENCE = 256
-            # ELMO_STOP_SENTENCE = 257
-            ELMO_START_WORD = 258
-            ELMO_STOP_WORD = 259
-            ELMO_CHAR_PAD = 260
-
-            # Sentence start/stop tokens are added inside the ELMo module
-            max_sentence_len = max([(len(sentence)) for sentence in sentences])
-            max_word_len = 50
-            char_idxs_encoder = np.zeros((len(sentences), max_sentence_len, max_word_len), dtype=int)
-
-            for snum, sentence in enumerate(sentences):
-                for wordnum, (tag, word) in enumerate(sentence):
-                    char_idxs_encoder[snum, wordnum, :] = ELMO_CHAR_PAD
-
-                    j = 0
-                    char_idxs_encoder[snum, wordnum, j] = ELMO_START_WORD
-                    j += 1
-                    assert word not in (START, STOP)
-                    for char_id in word.encode('utf-8', 'ignore')[:(max_word_len-2)]:
-                        char_idxs_encoder[snum, wordnum, j] = char_id
-                        j += 1
-                    char_idxs_encoder[snum, wordnum, j] = ELMO_STOP_WORD
-
-                    # +1 for masking (everything that stays 0 is past the end of the sentence)
-                    char_idxs_encoder[snum, wordnum, :] += 1
-
-            char_idxs_encoder = from_numpy(char_idxs_encoder)
-
-            elmo_out = self.elmo.forward(char_idxs_encoder)
-            elmo_rep0 = elmo_out['elmo_representations'][0]
-            elmo_mask = elmo_out['mask']
-
-            elmo_annotations_packed = elmo_rep0[elmo_mask.byte()].view(packed_len, -1)
-
-            # Apply projection to match dimensionality
-            extra_content_annotations = self.project_elmo(elmo_annotations_packed)
         elif self.bert is not None:
             all_input_ids = np.zeros((len(sentences), self.bert_max_len), dtype=int)
             all_input_mask = np.zeros((len(sentences), self.bert_max_len), dtype=int)

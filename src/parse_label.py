@@ -6,7 +6,8 @@ import torch
 import torch.nn as nn
 import torch.nn.init as init
 import sys
-DTYPE = torch.uint8 if float(sys.version[:3]) < 3.7 else torch.bool
+# DTYPE = torch.uint8 if float(sys.version[:3]) < 3.7 else torch.bool
+DTYPE = torch.bool
 use_cuda = torch.cuda.is_available()
 if use_cuda:
     torch_t = torch.cuda
@@ -17,9 +18,10 @@ else:
     torch_t = torch
     from torch import from_numpy
 
-import pyximport
-pyximport.install(setup_args={"include_dirs": np.get_include()})
-import chart_helper
+# import pyximport
+# pyximport.install(setup_args={"include_dirs": np.get_include()})
+# import chart_helper
+import chart_decoder as chart_helper
 import nkutil
 
 import trees
@@ -297,7 +299,7 @@ class MultiHeadAttention(nn.Module):
         q_padded = q_s.new_zeros((n_head, mb_size, len_padded, d_k))
         k_padded = k_s.new_zeros((n_head, mb_size, len_padded, d_k))
         v_padded = v_s.new_zeros((n_head, mb_size, len_padded, d_v))
-        invalid_mask = q_s.new_ones((mb_size, len_padded), dtype=torch.uint8)
+        invalid_mask = q_s.new_ones((mb_size, len_padded), dtype=DTYPE)
 
         for i, (start, end) in enumerate(zip(batch_idxs.boundaries_np[:-1], batch_idxs.boundaries_np[1:])):
             q_padded[:,i,:end-start,:] = q_s[:,start:end,:]
@@ -565,9 +567,18 @@ def get_elmo_class():
     return Elmo
 
 # %%
-def get_bert(bert_model, bert_do_lower_case):
+def get_bert_backup(bert_model, bert_do_lower_case):
     # Avoid a hard dependency on BERT by only importing it if it's being used
     from pytorch_pretrained_bert import BertTokenizer, BertModel
+    if bert_model.endswith('.tar.gz'):
+        tokenizer = BertTokenizer.from_pretrained(bert_model.replace('.tar.gz', '-vocab.txt'), do_lower_case=bert_do_lower_case)
+    else:
+        tokenizer = BertTokenizer.from_pretrained(bert_model, do_lower_case=bert_do_lower_case)
+    bert = BertModel.from_pretrained(bert_model)
+    return tokenizer, bert
+def get_bert(bert_model, bert_do_lower_case):
+    # Avoid a hard dependency on BERT by only importing it if it's being used
+    from transformers import BertTokenizer, BertModel
     if bert_model.endswith('.tar.gz'):
         tokenizer = BertTokenizer.from_pretrained(bert_model.replace('.tar.gz', '-vocab.txt'), do_lower_case=bert_do_lower_case)
     else:
@@ -689,6 +700,18 @@ class NKChartParser(nn.Module):
         self.partitioned = hparams.partitioned
         self.d_content = (self.d_model // 2) if self.partitioned else self.d_model
         self.d_positional = (hparams.d_model // 2) if self.partitioned else None
+        # add label attention
+        self.use_lal = hparams.use_lal
+        if self.use_lal:
+            self.lal_d_kv = hparams.lal_d_kv
+            self.lal_d_proj = hparams.lal_d_proj
+            self.lal_resdrop = hparams.lal_resdrop
+            self.lal_pwff = hparams.lal_pwff
+            self.lal_q_as_matrix = hparams.lal_q_as_matrix
+            self.lal_partitioned = hparams.lal_partitioned
+            self.lal_combine_as_self = hparams.lal_combine_as_self
+
+        self.contributions = False
 
         num_embeddings_map = {
             'tags': tag_vocab.size,
@@ -715,7 +738,6 @@ class NKChartParser(nn.Module):
             assert self.emb_types, "Need at least one of: use_tags, use_words, use_chars_lstm, use_elmo, use_bert, use_bert_only"
 
         self.char_encoder = None
-        self.elmo = None
         self.bert = None
         if hparams.use_chars_lstm:
             assert not hparams.use_elmo, "use_chars_lstm and use_elmo are mutually exclusive"
@@ -727,27 +749,6 @@ class NKChartParser(nn.Module):
                 self.d_content,
                 char_dropout=hparams.char_lstm_input_dropout,
             )
-        elif hparams.use_elmo:
-            assert not hparams.use_bert, "use_elmo and use_bert are mutually exclusive"
-            assert not hparams.use_bert_only, "use_elmo and use_bert_only are mutually exclusive"
-            self.elmo = get_elmo_class()(
-                options_file="data/elmo_2x4096_512_2048cnn_2xhighway_options.json",
-                weight_file="data/elmo_2x4096_512_2048cnn_2xhighway_weights.hdf5",
-                num_output_representations=1,
-                requires_grad=False,
-                do_layer_norm=False,
-                keep_sentence_boundaries=True,
-                dropout=hparams.elmo_dropout,
-                )
-            d_elmo_annotations = 1024
-
-            # Don't train gamma parameter for ELMo - the projection can do any
-            # necessary scaling
-            self.elmo.scalar_mix_0.gamma.requires_grad = False
-
-            # Reshapes the embeddings to match the model dimension, and making
-            # the projection trainable appears to improve parsing accuracy
-            self.project_elmo = nn.Linear(d_elmo_annotations, self.d_content, bias=False)
         elif hparams.use_bert or hparams.use_bert_only:
             self.bert_tokenizer, self.bert = get_bert(hparams.bert_model, hparams.bert_do_lower_case)
             if hparams.bert_transliterate:
@@ -943,45 +944,7 @@ class NKChartParser(nn.Module):
             assert i == packed_len
 
             extra_content_annotations = self.char_encoder(char_idxs_encoder, word_lens_encoder, batch_idxs)
-        elif self.elmo is not None:
-            # See https://github.com/allenai/allennlp/blob/c3c3549887a6b1fb0bc8abf77bc820a3ab97f788/allennlp/data/token_indexers/elmo_indexer.py#L61
-            # ELMO_START_SENTENCE = 256
-            # ELMO_STOP_SENTENCE = 257
-            ELMO_START_WORD = 258
-            ELMO_STOP_WORD = 259
-            ELMO_CHAR_PAD = 260
 
-            # Sentence start/stop tokens are added inside the ELMo module
-            max_sentence_len = max([(len(sentence)) for sentence in sentences])
-            max_word_len = 50
-            char_idxs_encoder = np.zeros((len(sentences), max_sentence_len, max_word_len), dtype=int)
-
-            for snum, sentence in enumerate(sentences):
-                for wordnum, (tag, word) in enumerate(sentence):
-                    char_idxs_encoder[snum, wordnum, :] = ELMO_CHAR_PAD
-
-                    j = 0
-                    char_idxs_encoder[snum, wordnum, j] = ELMO_START_WORD
-                    j += 1
-                    assert word not in (START, STOP)
-                    for char_id in word.encode('utf-8', 'ignore')[:(max_word_len-2)]:
-                        char_idxs_encoder[snum, wordnum, j] = char_id
-                        j += 1
-                    char_idxs_encoder[snum, wordnum, j] = ELMO_STOP_WORD
-
-                    # +1 for masking (everything that stays 0 is past the end of the sentence)
-                    char_idxs_encoder[snum, wordnum, :] += 1
-
-            char_idxs_encoder = from_numpy(char_idxs_encoder)
-
-            elmo_out = self.elmo.forward(char_idxs_encoder)
-            elmo_rep0 = elmo_out['elmo_representations'][0]
-            elmo_mask = elmo_out['mask']
-
-            elmo_annotations_packed = elmo_rep0[elmo_mask.byte()].view(packed_len, -1)
-
-            # Apply projection to match dimensionality
-            extra_content_annotations = self.project_elmo(elmo_annotations_packed)
         elif self.bert is not None:
             all_input_ids = np.zeros((len(sentences), self.bert_max_len), dtype=int)
             all_input_mask = np.zeros((len(sentences), self.bert_max_len), dtype=int)
@@ -1052,7 +1015,7 @@ class NKChartParser(nn.Module):
             features = all_encoder_layers[-1]
 
             if self.encoder is not None:
-                features_packed = features.masked_select(all_word_end_mask.to(torch.uint8).unsqueeze(-1)).reshape(-1, features.shape[-1])
+                features_packed = features.masked_select(all_word_end_mask.to(DTYPE).unsqueeze(-1)).reshape(-1, features.shape[-1])
 
                 # For now, just project the features from the last word piece in each word
                 extra_content_annotations = self.project_bert(features_packed)
@@ -1081,8 +1044,8 @@ class NKChartParser(nn.Module):
         else:
             assert self.bert is not None
             features = self.project_bert(features)
-            fencepost_annotations_start = features.masked_select(all_word_start_mask.to(torch.uint8).unsqueeze(-1)).reshape(-1, features.shape[-1])
-            fencepost_annotations_end = features.masked_select(all_word_end_mask.to(torch.uint8).unsqueeze(-1)).reshape(-1, features.shape[-1])
+            fencepost_annotations_start = features.masked_select(all_word_start_mask.to(DTYPE).unsqueeze(-1)).reshape(-1, features.shape[-1])
+            fencepost_annotations_end = features.masked_select(all_word_end_mask.to(DTYPE).unsqueeze(-1)).reshape(-1, features.shape[-1])
             if self.f_tag is not None:
                 tag_annotations = fencepost_annotations_end
 
@@ -1181,7 +1144,7 @@ class NKChartParser(nn.Module):
             ], 2)
         return label_scores_chart
 
-    def label_scores_from_annotations(self, fencepost_annotations_start, fencepost_annotations_end):
+    def label_scores_from_annotations_backup(self, fencepost_annotations_start, fencepost_annotations_end):
 
         span_features = (torch.unsqueeze(fencepost_annotations_end, 0)
                          - torch.unsqueeze(fencepost_annotations_start, 1))
@@ -1214,6 +1177,38 @@ class NKChartParser(nn.Module):
         ], 2)
         # if self.contributions and self.use_lal:
         #     return label_scores_chart, contributions
+        return label_scores_chart
+
+    def label_scores_from_annotations(self, fencepost_annotations_start, fencepost_annotations_end):
+
+        span_features = (torch.unsqueeze(fencepost_annotations_end, 0)
+                         - torch.unsqueeze(fencepost_annotations_start, 1))
+
+        if self.contributions and self.use_lal:
+            contributions = np.zeros(
+                (span_features.shape[0], span_features.shape[1], span_features.shape[2] // self.lal_d_proj))
+            half_vector = span_features.shape[-1] // 2
+            half_dim = self.lal_d_proj // 2
+            for i in range(contributions.shape[0]):
+                for j in range(contributions.shape[1]):
+                    for l in range(contributions.shape[-1]):
+                        contributions[i, j, l] = span_features[i, j,
+                                                 l * half_dim:(l + 1) * half_dim].sum() + span_features[i, j,
+                                                                                          half_vector + l * half_dim:half_vector + (
+                                                                                                      l + 1) * half_dim].sum()
+                    contributions[i, j, :] = (contributions[i, j, :] - np.min(contributions[i, j, :]))
+                    contributions[i, j, :] = (contributions[i, j, :]) / (
+                                np.max(contributions[i, j, :]) - np.min(contributions[i, j, :]))
+                    # contributions[i,j,:] = contributions[i,j,:]/np.sum(contributions[i,j,:])
+            contributions = torch.softmax(torch.Tensor(contributions), -1)
+
+        label_scores_chart = self.f_label(span_features)
+        label_scores_chart = torch.cat([
+            label_scores_chart.new_zeros((label_scores_chart.size(0), label_scores_chart.size(1), 1)),
+            label_scores_chart
+        ], 2)
+        if self.contributions and self.use_lal:
+            return label_scores_chart, contributions
         return label_scores_chart
 
     def parse_from_annotations(self, fencepost_annotations_start, fencepost_annotations_end, sentence, gold=None):

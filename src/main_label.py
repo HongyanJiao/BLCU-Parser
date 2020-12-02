@@ -36,9 +36,9 @@ def make_hparams():
         max_len_train=0, # no length limit
         max_len_dev=0, # no length limit
 
-        sentence_max_len=600,
+        sentence_max_len=512,
 
-        learning_rate=0.0008,
+        learning_rate=0.00005,
         learning_rate_warmup_steps=160,
         clip_grad_norm=0., #no clipping
         step_decay=True, # note that disabling step decay is not implemented
@@ -63,7 +63,7 @@ def make_hparams():
         relu_dropout=0.1,
         residual_dropout=0.2,
 
-        use_tags=False,
+        use_tags=True,
         use_words=True,
         use_chars_lstm=True,
         use_elmo=False,
@@ -80,9 +80,19 @@ def make_hparams():
         char_lstm_input_dropout=0.2,
         elmo_dropout=0.5, # Note that this semi-stacks with morpho_emb_dropout!
 
-        bert_model="bert-base-uncased",
+        bert_model="bert-base-chinese",
         bert_do_lower_case=True,
         bert_transliterate="",
+
+        ### Label Attention Layer
+        use_lal=True, # Whether the LAL is used at all
+        lal_d_kv=64, # Dimension of Key and Query Vectors in the LAL
+        lal_d_proj=64, # Dimension of the output vector from each label attention head
+        lal_resdrop=True, # True means the LAL uses Residual Dropout
+        lal_pwff=True, # True means the LAL has a Position-wise Feed-forward Layer
+        lal_q_as_matrix=False, # False means the LAL uses learned query vectors
+        lal_partitioned=True, # Partitioned as per the Berkeley Self-Attentive Parser
+        lal_combine_as_self=False, # False means the LAL uses concatenation
         )
 
 def run_train(args, hparams):
@@ -90,12 +100,6 @@ def run_train(args, hparams):
         print("Setting numpy random seed to {}...".format(args.numpy_seed))
         np.random.seed(args.numpy_seed)
 
-    # Make sure that pytorch is actually being initialized randomly.
-    # On my cluster I was getting highly correlated results from multiple
-    # runs, but calling reset_parameters() changed that. A brief look at the
-    # pytorch source code revealed that pytorch initializes its RNG by
-    # calling std::random_device, which according to the C++ spec is allowed
-    # to be deterministic.
     seed_from_numpy = np.random.randint(2147483648)
     print("Manual seed for pytorch:", seed_from_numpy)
     torch.manual_seed(seed_from_numpy)
@@ -502,58 +506,6 @@ def run_parse(args):
                 output_file.write("{}\n".format(tree.linearize()))
         print("Output written to:", args.output_path)
 
-#%%
-def run_viz(args):
-    assert args.model_path_base.endswith(".pt"), "Only pytorch savefiles supported"
-
-    print("Loading test trees from {}...".format(args.viz_path))
-    viz_treebank = trees.load_trees(args.viz_path)
-    print("Loaded {:,} test examples.".format(len(viz_treebank)))
-
-    print("Loading model from {}...".format(args.model_path_base))
-
-    info = torch_load(args.model_path_base)
-
-    assert 'hparams' in info['spec'], "Only self-attentive models are supported"
-    parser = parse_nk.NKChartParser.from_spec(info['spec'], info['state_dict'])
-
-    from viz import viz_attention
-
-    stowed_values = {}
-    orig_multihead_forward = parse_nk.MultiHeadAttention.forward
-    def wrapped_multihead_forward(self, inp, batch_idxs, **kwargs):
-        res, attns = orig_multihead_forward(self, inp, batch_idxs, **kwargs)
-        stowed_values[f'attns{stowed_values["stack"]}'] = attns.cpu().data.numpy()
-        stowed_values['stack'] += 1
-        return res, attns
-
-    parse_nk.MultiHeadAttention.forward = wrapped_multihead_forward
-
-    # Select the sentences we will actually be visualizing
-    max_len_viz = 15
-    if max_len_viz > 0:
-        viz_treebank = [tree for tree in viz_treebank if len(list(tree.leaves())) <= max_len_viz]
-    viz_treebank = viz_treebank[:1]
-
-    print("Parsing viz sentences...")
-
-    for start_index in range(0, len(viz_treebank), args.eval_batch_size):
-        subbatch_trees = viz_treebank[start_index:start_index+args.eval_batch_size]
-        subbatch_sentences = [[(leaf.tag, leaf.word) for leaf in tree.leaves()] for tree in subbatch_trees]
-        stowed_values = dict(stack=0)
-        predicted, _ = parser.parse_batch(subbatch_sentences)
-        del _
-        predicted = [p.convert() for p in predicted]
-        stowed_values['predicted'] = predicted
-
-        for snum, sentence in enumerate(subbatch_sentences):
-            sentence_words = [tokens.START] + [x[1] for x in sentence] + [tokens.STOP]
-
-            for stacknum in range(stowed_values['stack']):
-                attns_padded = stowed_values[f'attns{stacknum}']
-                attns = attns_padded[snum::len(subbatch_sentences), :len(sentence_words), :len(sentence_words)]
-                viz_attention(sentence_words, attns)
-
 
 def main():
     parser = argparse.ArgumentParser()
@@ -564,11 +516,11 @@ def main():
     subparser.set_defaults(callback=lambda args: run_train(args, hparams))
     hparams.populate_arguments(subparser)
     subparser.add_argument("--numpy-seed", type=int)
-    subparser.add_argument("--model-path-base", default='/home/jessica/parser/bert_parser/models',required=False)
+    subparser.add_argument("--model-path-base", default='../../models', required=False)
     subparser.add_argument("--evalb-dir", default="../EVALB/")
-    subparser.add_argument("--train-path", default="/home/jessica/parser/data/train.small")
-    subparser.add_argument("--dev-path", default="/home/jessica/parser/data/dev.small")
-    subparser.add_argument("--batch-size", type=int, default=250)
+    subparser.add_argument("--train-path", default="../data/train.small")
+    subparser.add_argument("--dev-path", default="../data/dev.small")
+    subparser.add_argument("--batch-size", type=int, default=32)
     subparser.add_argument("--subbatch-max-tokens", type=int, default=2000)
     subparser.add_argument("--eval-batch-size", type=int, default=100)
     subparser.add_argument("--epochs", type=int)
@@ -596,14 +548,6 @@ def main():
     subparser.add_argument("--input-path", type=str, required=True)
     subparser.add_argument("--output-path", type=str, default="-")
     subparser.add_argument("--eval-batch-size", type=int, default=100)
-
-    subparser = subparsers.add_parser("viz")
-    subparser.set_defaults(callback=run_viz)
-    subparser.add_argument("--model-path-base", required=True)
-    subparser.add_argument("--evalb-dir", default="EVALB/")
-    subparser.add_argument("--viz-path", default="data/22.auto.clean")
-    subparser.add_argument("--eval-batch-size", type=int, default=100)
-
     args = parser.parse_args()
     args.callback(args)
 
