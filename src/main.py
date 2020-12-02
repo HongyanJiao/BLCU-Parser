@@ -47,7 +47,7 @@ def make_hparams():
 
         num_layers=8,
         d_model=1024,
-        num_heads=32,
+        num_heads=8,
         d_kv=64,
         d_ff=2048,
         d_label_hidden=250,
@@ -73,7 +73,6 @@ def make_hparams():
         morpho_emb_dropout=0.2,
         timing_dropout=0.0,
         char_lstm_input_dropout=0.2,
-        elmo_dropout=0.5, # Note that this semi-stacks with morpho_emb_dropout!
 
         bert_model="bert-base-chinese",
         bert_do_lower_case=True,

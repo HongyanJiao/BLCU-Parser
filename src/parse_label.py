@@ -560,13 +560,7 @@ class CharacterLSTM(nn.Module):
         res = self.layer_norm(res)
         return res
 
-# %%
-def get_elmo_class():
-    # Avoid a hard dependency by only importing Elmo if it's being used
-    from allennlp.modules.elmo import Elmo
-    return Elmo
 
-# %%
 def get_bert_backup(bert_model, bert_do_lower_case):
     # Avoid a hard dependency on BERT by only importing it if it's being used
     from pytorch_pretrained_bert import BertTokenizer, BertModel
