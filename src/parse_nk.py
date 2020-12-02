@@ -559,7 +559,7 @@ class CharacterLSTM(nn.Module):
         return res
 
 # %%
-def get_bert_backup(bert_model, bert_do_lower_case):
+def get_bert(bert_model, bert_do_lower_case):
     # Avoid a hard dependency on BERT by only importing it if it's being used
     from pytorch_pretrained_bert import BertTokenizer, BertModel
     if bert_model.endswith('.tar.gz'):
@@ -568,7 +568,7 @@ def get_bert_backup(bert_model, bert_do_lower_case):
         tokenizer = BertTokenizer.from_pretrained(bert_model, do_lower_case=bert_do_lower_case)
     bert = BertModel.from_pretrained(bert_model)
     return tokenizer, bert
-def get_bert(bert_model, bert_do_lower_case):
+def get_bert_backup(bert_model, bert_do_lower_case):
     # Avoid a hard dependency on BERT by only importing it if it's being used
     import transformers
     from transformers import BertTokenizer, BertModel
