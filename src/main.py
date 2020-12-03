@@ -204,6 +204,8 @@ def run_train(args, hparams):
 
     print("Initializing optimizer...")
     trainable_parameters = [param for param in parser.parameters() if param.requires_grad]
+    total = sum([param.nelement() for param in trainable_parameters])
+    print("Number of parameter: %.3fM" % (total / 1e6))
     trainer = torch.optim.Adam(trainable_parameters, lr=1., betas=(0.9, 0.98), eps=1e-9)
     if load_path is not None:
         trainer.load_state_dict(info['trainer'])
