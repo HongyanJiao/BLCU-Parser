@@ -1268,7 +1268,7 @@ class NKChartParser(nn.Module):
         if self.encoder is not None:
             annotations, self.current_attns = self.encoder(emb_idxs, batch_idxs, extra_content_annotations=extra_content_annotations)
 
-            if self.partitioned:
+            if self.partitioned and not self.use_lal:
                 # Rearrange the annotations to ensure that the transition to
                 # fenceposts captures an even split between position and content.
                 # TODO(nikita): try alternatives, such as omitting position entirely
@@ -1276,14 +1276,26 @@ class NKChartParser(nn.Module):
                     annotations[:, 0::2],
                     annotations[:, 1::2],
                 ], 1)
+            if self.use_lal and not self.lal_combine_as_self:
+                half_dim = self.lal_d_proj // 2
+                d_l = self.label_vocab.size - 1
+                fencepost_annotations = torch.cat(
+                    [annotations[:-1, (i * self.lal_d_proj):(i * self.lal_d_proj + half_dim)] for i in range(d_l)]
+                    + [annotations[1:, (i * self.lal_d_proj + half_dim):((i + 1) * self.lal_d_proj)] for i in
+                       range(d_l)], 1)
+            else:
+                fencepost_annotations = torch.cat([
+                    annotations[:-1, :self.d_model // 2],
+                    annotations[1:, self.d_model // 2:],
+                ], 1)
 
             if self.f_tag is not None:
                 tag_annotations = annotations
 
-            fencepost_annotations = torch.cat([
-                annotations[:-1, :self.d_model//2],
-                annotations[1:, self.d_model//2:],
-                ], 1)
+            # fencepost_annotations = torch.cat([
+            #     annotations[:-1, :self.d_model//2],
+            #     annotations[1:, self.d_model//2:],
+            #     ], 1)
             fencepost_annotations_start = fencepost_annotations
             fencepost_annotations_end = fencepost_annotations
         else:
@@ -1486,7 +1498,7 @@ class NKChartParser(nn.Module):
             scores.append(score)
         return trees, scores
 
-    def decode_from_chart(self, sentence, chart_np, gold=None, contributions=None):
+    def decode_from_chart(self, sentence, chart_np, gold=None, contributions=None,  sentence_idx=None):
         decoder_args = dict(
             sentence_len=len(sentence),
             label_scores_chart=chart_np,
@@ -1510,6 +1522,13 @@ class NKChartParser(nn.Module):
             idx += 1
             i, j, label_idx = p_i[idx], p_j[idx], p_label[idx]
             label = self.label_vocab.value(label_idx)
+            if contributions is not None:
+                if label_idx > 0:
+                    print(i, sentence[i], j, sentence[j - 1], label, label_idx, contributions[i, j, label_idx - 1])
+                    print("CONTRIBUTIONS")
+                    print(list(enumerate(contributions[i, j])))
+                    print("ATTENTION DIST")
+                    print(torch.softmax(self.current_attns[sentence_idx::mb_size, 0, i:j + 1], -1))
             if (i + 1) >= j:
                 tag, word = sentence[i]
                 tree = trees.LeafParseNode(int(i), tag, word)

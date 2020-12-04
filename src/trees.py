@@ -191,10 +191,6 @@ def load_trees(path, strip_top=False, strip_spmrl_features=True):
 
     tokens = treebank.replace("(", " ( ").replace(")", " ) ").split()
 
-    # XXX(nikita): this should really be passed as an argument
-    if 'Hebrew' in path or 'Hungarian' in path or 'Arabic' in path:
-        strip_top = False
-
     def helper(index):
         trees = []
 
@@ -225,13 +221,6 @@ def load_trees(path, strip_top=False, strip_spmrl_features=True):
     trees, index = helper(0)
     assert index == len(tokens)
 
-    # XXX(nikita): this behavior should really be controlled by an argument
-    if 'German' in path:
-        # Utterances where the root is a terminal symbol break our parser's
-        # assumptions, so insert a dummy root node.
-        for i, tree in enumerate(trees):
-            if isinstance(tree, LeafTreebankNode):
-                trees[i] = InternalTreebankNode("VROOT", [tree])
 
     if strip_top:
         for i, tree in enumerate(trees):
@@ -240,58 +229,3 @@ def load_trees(path, strip_top=False, strip_spmrl_features=True):
                 trees[i] = tree.children[0]
 
     return trees
-
-def load_silver_trees_single(path):
-    with gzip.open(path, mode='rt') as f:
-        linenum = 0
-        for line in f:
-            linenum += 1
-            tokens = line.replace("(", " ( ").replace(")", " ) ").split()
-
-            def helper(index):
-                trees = []
-
-                while index < len(tokens) and tokens[index] == "(":
-                    paren_count = 0
-                    while tokens[index] == "(":
-                        index += 1
-                        paren_count += 1
-
-                    label = tokens[index]
-                    index += 1
-
-                    if tokens[index] == "(":
-                        children, index = helper(index)
-                        trees.append(InternalTreebankNode(label, children))
-                    else:
-                        word = tokens[index]
-                        index += 1
-                        trees.append(LeafTreebankNode(label, word))
-
-                    while paren_count > 0:
-                        assert tokens[index] == ")"
-                        index += 1
-                        paren_count -= 1
-
-                return trees, index
-
-            trees, index = helper(0)
-            assert index == len(tokens)
-
-            assert len(trees) == 1
-            tree = trees[0]
-
-            # Strip the root S1 node
-            assert tree.label == "S1"
-            assert len(tree.children) == 1
-            tree = tree.children[0]
-
-            yield tree
-
-def load_silver_trees(path, batch_size):
-    batch = []
-    for tree in load_silver_trees_single(path):
-        batch.append(tree)
-        if len(batch) == batch_size:
-            yield batch
-            batch = []
