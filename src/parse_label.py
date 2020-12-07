@@ -824,7 +824,7 @@ class Encoder(nn.Module):
     def __init__(self, hparams, embedding,
                      num_layers=1, num_heads=2,
                      d_kv = 32, d_ff=1024,
-                     d_l=112,
+                     d_l=120,
                      d_positional=None,
                      num_layers_position_only=0,
                      relu_dropout=0.1, residual_dropout=0.1, attention_dropout=0.1,
@@ -940,7 +940,8 @@ class NKChartParser(nn.Module):
             self.lal_partitioned = hparams.lal_partitioned
             self.lal_combine_as_self = hparams.lal_combine_as_self
 
-        self.contributions = False
+        # self.contributions = False
+        self.contributions = True
 
         num_embeddings_map = {
             'tags': tag_vocab.size,
@@ -1012,7 +1013,8 @@ class NKChartParser(nn.Module):
                 num_heads=hparams.num_heads,
                 d_kv=hparams.d_kv,
                 d_ff=hparams.d_ff,
-                d_l= label_vocab.size - 2,
+                d_l= label_vocab.size - 1,
+                # d_l=label_vocab.size,
                 d_positional=self.d_positional,
                 relu_dropout=hparams.relu_dropout,
                 residual_dropout=hparams.residual_dropout,
@@ -1028,8 +1030,10 @@ class NKChartParser(nn.Module):
         else:
             self.embedding = None
             self.encoder = None
-        annotation_dim = ((label_vocab.size - 2) * self.lal_d_proj) if (
-                    self.use_lal and not self.lal_combine_as_self) else hparams.d_model
+        # annotation_dim = ((label_vocab.size - 2) * self.lal_d_proj) if (
+        #             self.use_lal and not self.lal_combine_as_self) else hparams.d_model
+        annotation_dim = ((label_vocab.size - 1) * self.lal_d_proj) if (
+                self.use_lal and not self.lal_combine_as_self) else hparams.d_model
         hparams.annotation_dim = annotation_dim
         self.f_label = nn.Sequential(
             nn.Linear(annotation_dim, hparams.d_label_hidden),
@@ -1496,7 +1500,7 @@ class NKChartParser(nn.Module):
             g_score, g_i, g_j, g_label, g_augment = chart_helper.decode(True, **decoder_args)
             return p_i, p_j, p_label, p_augment, g_i, g_j, g_label
         else:
-            return self.decode_from_chart(sentence, label_scores_chart_np,contributions)
+            return self.decode_from_chart(sentence, label_scores_chart_np,contributions=contributions)
 
     def decode_from_chart_batch(self, sentences, charts_np, golds=None):
         trees = []
@@ -1524,8 +1528,8 @@ class NKChartParser(nn.Module):
         # tree, we assume that the indices follow a preorder traversal.
         score, p_i, p_j, p_label, _ = chart_helper.decode(force_gold, **decoder_args)
         if contributions is not None:
-            d_l = (self.label_vocab.size - 2)
-            mb_size = (self.current_attns.shape[0] // d_l)
+            # d_l = (self.label_vocab.size - 2)
+            # mb_size = (self.current_attns.shape[0] // d_l)
             print('SENTENCE', sentence)
         idx = -1
         def make_tree():
@@ -1538,8 +1542,8 @@ class NKChartParser(nn.Module):
                     print(i, sentence[i], j, sentence[j - 1], label, label_idx, contributions[i, j, label_idx - 1])
                     print("CONTRIBUTIONS")
                     print(list(enumerate(contributions[i, j])))
-                    print("ATTENTION DIST")
-                    print(torch.softmax(self.current_attns[sentence_idx::mb_size, 0, i:j + 1], -1))
+                    # print("ATTENTION DIST")
+                    # print(torch.softmax(self.current_attns[sentence_idx::mb_size, 0, i:j + 1], -1))
             if (i + 1) >= j:
                 tag, word = sentence[i]
                 tree = trees.LeafParseNode(int(i), tag, word)

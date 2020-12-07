@@ -521,7 +521,7 @@ def main():
     subparser.set_defaults(callback=lambda args: run_train(args, hparams))
     hparams.populate_arguments(subparser)
     subparser.add_argument("--numpy-seed", type=int)
-    subparser.add_argument("--model-path-base", default='../../models', required=False)
+    subparser.add_argument("--model-path-base", default='../../models/', required=False)
     subparser.add_argument("--evalb-dir", default="../EVALB/")
     subparser.add_argument("--train-path", default="../data/train.small")
     subparser.add_argument("--dev-path", default="../data/dev.small")
