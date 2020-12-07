@@ -63,9 +63,9 @@ def make_hparams():
         relu_dropout=0.1,
         residual_dropout=0.2,
 
-        use_tags=True,
-        use_words=True,
-        use_chars_lstm=True,
+        use_tags=False,
+        use_words=False,
+        use_chars_lstm=False,
         use_elmo=False,
         use_bert=False,
         use_bert_only=False,

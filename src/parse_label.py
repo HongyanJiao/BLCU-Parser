@@ -1077,6 +1077,12 @@ class NKChartParser(nn.Module):
             hparams['predict_tags'] = False
         if 'bert_transliterate' not in hparams:
             hparams['bert_transliterate'] = ""
+        for param in 'use_lal lal_resdrop lal_pwff lal_partitioned lal_q_as_matrix lal_combine_as_self'.split(' '):
+            if param not in hparams:
+                hparams[param] = False
+        for param in 'lal_d_kv lal_d_proj'.split(' '):
+            if param not in hparams:
+                hparams[param] = 64
 
         spec['hparams'] = nkutil.HParams(**hparams)
         res = cls(**spec)
@@ -1470,9 +1476,14 @@ class NKChartParser(nn.Module):
 
     def parse_from_annotations(self, fencepost_annotations_start, fencepost_annotations_end, sentence, gold=None):
         is_train = gold is not None
-        label_scores_chart = self.label_scores_from_annotations(fencepost_annotations_start, fencepost_annotations_end)
+        contributions = None
+        if self.contributions and self.use_lal:
+            label_scores_chart, contributions = self.label_scores_from_annotations(fencepost_annotations_start,
+                                                                                   fencepost_annotations_end)
+        else:
+            label_scores_chart = self.label_scores_from_annotations(fencepost_annotations_start,
+                                                                    fencepost_annotations_end)
         label_scores_chart_np = label_scores_chart.cpu().data.numpy()
-
         if is_train:
             decoder_args = dict(
                 sentence_len=len(sentence),
@@ -1485,7 +1496,7 @@ class NKChartParser(nn.Module):
             g_score, g_i, g_j, g_label, g_augment = chart_helper.decode(True, **decoder_args)
             return p_i, p_j, p_label, p_augment, g_i, g_j, g_label
         else:
-            return self.decode_from_chart(sentence, label_scores_chart_np)
+            return self.decode_from_chart(sentence, label_scores_chart_np,contributions)
 
     def decode_from_chart_batch(self, sentences, charts_np, golds=None):
         trees = []
