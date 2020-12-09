@@ -4,32 +4,32 @@ def decode(force_gold, sentence_len, label_scores_chart, is_train, gold, label_v
     NEG_INF = -np.inf
 
     # Label scores chart is copied so we can modify it in-place for augmentated decode
-    label_scores_chart_copy = label_scores_chart.copy()
+    label_scores_chart_copy = label_scores_chart.copy() # 编码层输出的表
     value_chart = np.zeros((sentence_len+1, sentence_len+1), dtype=np.float32)
     split_idx_chart = np.zeros((sentence_len+1, sentence_len+1), dtype=np.int32)
     best_label_chart = np.zeros((sentence_len+1, sentence_len+1), dtype=np.int32)
-    #get ground truth
+    #get ground truth oracle_label_chart(label_id), oracle_split_chart(split_id)
     if is_train or force_gold:
-
         oracle_label_chart = np.zeros((sentence_len+1, sentence_len+1), dtype=np.int32)
-        # label id
         oracle_split_chart = np.zeros((sentence_len+1, sentence_len+1), dtype=np.int32)
-        # split id
         for length in range(1, sentence_len + 1):
             for left in range(0, sentence_len + 1 - length):
                 right = left + length
-                # print('left, right', left, right)
-                # print('gold.oracle_label(left, right)', gold.oracle_label(left, right))
                 oracle_label_chart[left, right] = label_vocab.index(gold.oracle_label(left, right))
                 if length == 1: # length=1，span是词，终止条件
                     continue
                 oracle_splits = gold.oracle_splits(left, right)
                 oracle_split_chart[left, right] = min(oracle_splits)
+    # get ground truth done
+    # oracle_label_chart
+    # oracle_split_chart
+    # 填表
     for length in range(1, sentence_len + 1):
         for left in range(0, sentence_len + 1 - length):
             right = left + length
-
+            # 遍历每一个span
             if is_train or force_gold:
+                # 若有答案，记录 label_id
                 oracle_label_index = oracle_label_chart[left, right]
 
             if force_gold:
@@ -39,7 +39,7 @@ def decode(force_gold, sentence_len, label_scores_chart, is_train, gold, label_v
             else:
                 if is_train:
                     # augment: here we subtract 1 from the oracle label
-                    # 增强：在这里，我们从预测标签中减去1
+                    # 训练时的增强：从预测标签对应的值中减去1
                     label_scores_chart_copy[left, right, oracle_label_index] -= 1
 
                 # We do argmax ourselves to make sure it compiles to pure C
@@ -59,7 +59,7 @@ def decode(force_gold, sentence_len, label_scores_chart, is_train, gold, label_v
                 # best_label_chart 存储span对应得分最高的label_index
                 if is_train:
                     # augment: here we add 1 to all label scores
-                    # 先减1，再加1
+                    # 先减1，再加1, 增强
                     label_score += 1
 
             if length == 1:
@@ -69,22 +69,28 @@ def decode(force_gold, sentence_len, label_scores_chart, is_train, gold, label_v
             if force_gold:
                 best_split = oracle_split_chart[left, right]
             else:
-                best_split = left + 1
+                best_split = left + 1 #默认按最左切分 leftmost
                 split_val = NEG_INF
                 for split_idx in range(left + 1, right):
                     max_split_val = value_chart[left, split_idx] + value_chart[split_idx, right]
                     if max_split_val > split_val:
                         split_val = max_split_val
                         best_split = split_idx
-
+            # label得分和左右两边的split得分
             value_chart[left, right] = label_score + value_chart[left, best_split] + value_chart[best_split, right]
             split_idx_chart[left, right] = best_split
 
     # Now we need to recover the tree by traversing the chart starting at the
     # root. This iterative implementation is faster than any of my attempts to
     # use helper functions and recursion
+    # 准备好的：
+    # 得分 （label+split）value_chart，
+    # 切分点 split_idx_chart，
+    # label_id: best_label_chart
 
     # All fully binarized trees have the same number of nodes
+    # 二叉树节点数量固定
+    # 两个栈，stack和included实现动规
     num_tree_nodes = 2 * sentence_len - 1
     included_i = np.empty(num_tree_nodes, dtype=np.int32)
     included_j = np.empty(num_tree_nodes, dtype=np.int32)
@@ -95,6 +101,8 @@ def decode(force_gold, sentence_len, label_scores_chart, is_train, gold, label_v
     # technically, the maximum stack depth is smaller than this
     stack_i = np.empty(num_tree_nodes + 5, dtype=np.int32)
     stack_j = np.empty(num_tree_nodes + 5, dtype=np.int32)
+    # stack_i 从左到右
+    # stack_j 从右到左
     stack_i[1] = 0
     stack_j[1] = sentence_len
 
@@ -106,7 +114,7 @@ def decode(force_gold, sentence_len, label_scores_chart, is_train, gold, label_v
         included_j[idx] = j
         included_label[idx] = best_label_chart[i, j]
         idx += 1
-        if i + 1 < j:
+        if i + 1 < j: # 非叶子节点
             k = split_idx_chart[i, j]
             stack_idx += 1
             stack_i[stack_idx] = k
@@ -120,8 +128,8 @@ def decode(force_gold, sentence_len, label_scores_chart, is_train, gold, label_v
         running_total += label_scores_chart[included_i[idx], included_j[idx], included_label[idx]]
 
     score = value_chart[0, sentence_len]
-    augment_amount = round(score - running_total)
-
+    augment_amount = round(score - running_total) # 总体增强差值
+    # 得分，左边界，右边界，label，增量
     return score, included_i.astype(int), included_j.astype(int), included_label.astype(int), augment_amount
 if __name__=='__main__':
     import trees

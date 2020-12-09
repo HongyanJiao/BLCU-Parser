@@ -523,6 +523,9 @@ def main():
     subparser.add_argument("--epochs", type=int)
     subparser.add_argument("--checks-per-epoch", type=int, default=4)
     subparser.add_argument("--print-vocabs", action="store_true")
+    # subparser.add_argument("--is-cky-cython", type=int, default=0)
+    # subparser.add_argument("--is-cky-python", type=int, default=0)
+    # subparser.add_argument("--is-top-python", type=int, default=1)
 
     subparser = subparsers.add_parser("test")
     subparser.set_defaults(callback=run_test)
