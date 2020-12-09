@@ -61,7 +61,7 @@ def make_hparams():
 
         use_tags=False,
         use_words=False,
-        use_chars_lstm=True,
+        use_chars_lstm=False,
         use_bert=False,
         use_bert_only=False,
         predict_tags=False,
