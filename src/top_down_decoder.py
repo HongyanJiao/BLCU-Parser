@@ -2,8 +2,6 @@ import numpy as np
 
 def decode(force_gold, sentence_len, label_scores_chart, is_train, gold, label_vocab):
     NEG_INF = -np.inf
-
-    # Label scores chart is copied so we can modify it in-place for augmentated decode
     label_scores_chart_copy = label_scores_chart.copy() # 编码层输出的表
     value_chart = np.zeros((sentence_len+1, sentence_len+1), dtype=np.float32)
     # value_chart = label_scores_chart.copy()
@@ -162,7 +160,6 @@ if __name__=='__main__':
     label_vocab.index(())
     label_vocab.freeze()
     print("label_vocab_size {:,}.".format(label_vocab.size))
-
     label_scores_chart_np = np.random.random(size=[4, 4, label_vocab.size])
     decode(force_gold=False, sentence_len=3, label_scores_chart=label_scores_chart_np,
            is_train=True, gold=test_parse, label_vocab=label_vocab)
