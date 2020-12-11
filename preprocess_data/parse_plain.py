@@ -17,7 +17,7 @@ def SegPOS(inPath,fOut):
             for pos in t.treepositions('leaves'):
                 sent=''
                 for wordlist, wordpos in pseg.cut(t[pos]):
-                    str1 = '('+wordpos+' '+ wordlist+')'
+                    str1 = '(UNK ' + wordlist+')'
                     sent+=str1
                 t[pos] = sent
             sent = str(t).replace('\n', '').replace(')(', ') (')
@@ -39,7 +39,7 @@ def main(inp_dir, out_file):
 if __name__=='__main__':
     parser = argparse.ArgumentParser(description='tree to chunk')
     parser.add_argument('--input_dir', default='../../../data/news_tree/clean')
-    parser.add_argument('--output_file', default='../../../data/news_tree/segment')
+    parser.add_argument('--output_file', default='../../../data/news_tree/unk_segment')
     args = parser.parse_args()
     main(args.input_dir,args.output_file)
 

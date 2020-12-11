@@ -35,8 +35,8 @@ def main(inp_dir, out_dir):
 
 if __name__=='__main__':
     parser = argparse.ArgumentParser(description='tree to chunk')
-    parser.add_argument('--input_dir', default='../data')
-    parser.add_argument('--output_dir', default='../char_data')
+    parser.add_argument('--input_dir', default='../unk_data')
+    parser.add_argument('--output_dir', default='../unkc_data')
     args = parser.parse_args()
     main(args.input_dir,args.output_dir)
 

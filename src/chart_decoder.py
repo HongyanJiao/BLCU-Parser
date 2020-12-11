@@ -19,7 +19,7 @@ def decode(force_gold, sentence_len, label_scores_chart, is_train, gold, label_v
                 if length == 1: # length=1，span是词，终止条件
                     continue
                 oracle_splits = gold.oracle_splits(left, right)
-                oracle_split_chart[left, right] = min(oracle_splits)
+                oracle_split_chart[left, right] = min(oracle_splits) # 左右边界的split点中，取最左的leftmost
     # get ground truth done
     # oracle_label_chart
     # oracle_split_chart

@@ -52,8 +52,8 @@ if __name__ == '__main__':
     #inp_path = './data/18W/18W_lt500_plain.txt'
     #out_path = './data/18W/500'
     parser = argparse.ArgumentParser()
-    parser.add_argument('--input_path', default='../../../data/news_tree/segment')
-    parser.add_argument('--out_path',default='../data')
+    parser.add_argument('--input_path', default='../../../data/news_tree/unk_segment')
+    parser.add_argument('--out_path',default='../unk_data')
     parser.add_argument("--p1", default=0.1, type=float, help='out dataset path')
     parser.add_argument("--p2", default=0.1, type=float, help='out dataset path')
     args = parser.parse_args()
