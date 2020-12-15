@@ -523,9 +523,6 @@ def main():
     subparser.add_argument("--epochs", type=int)
     subparser.add_argument("--checks-per-epoch", type=int, default=4)
     subparser.add_argument("--print-vocabs", action="store_true")
-    # subparser.add_argument("--is-cky-cython", type=int, default=0)
-    # subparser.add_argument("--is-cky-python", type=int, default=0)
-    # subparser.add_argument("--is-top-python", type=int, default=1)
 
     subparser = subparsers.add_parser("test")
     subparser.set_defaults(callback=run_test)
@@ -533,7 +530,7 @@ def main():
     subparser.add_argument("--evalb-dir", default="EVALB/")
     subparser.add_argument("--test-path", default="data/23.auto.clean")
     subparser.add_argument("--test-path-raw", type=str)
-    subparser.add_argument("--eval-batch-size", type=int, default=100)
+    subparser.add_argument("--eval-batch-size", type=int, default=1)
 
     subparser = subparsers.add_parser("ensemble")
     subparser.set_defaults(callback=run_ensemble)
