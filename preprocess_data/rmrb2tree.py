@@ -1,17 +1,25 @@
 #coding:utf8
 import argparse
 import codecs
+import src.trees as trees
 import os
 import sys
 def process(fin, fout):
     for line in fin:
+        flag = True
         words = line.strip().split()
-        if words and '/' in words[0]:
-            sent = '(ROOT (IP '
-            for word in words:
+        sent = '(ROOT (IP '
+        if not words:
+            flag = False
+        for word in words:
+            try:
                 w, p = word.split('/')
                 sent += '(' + str(p) + ' ' + str(w) + ')'
-            sent += '))'
+            except:
+                flag = False
+        sent += '))'
+        trees.tree_from_str(sent)
+        if flag:
             fout.write(sent + '\n')
 def main(i, o):
     fin = codecs.open(i, 'r', 'utf8')
