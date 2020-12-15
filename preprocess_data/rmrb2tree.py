@@ -6,7 +6,7 @@ import sys
 def process(fin, fout):
     for line in fin:
         words = line.strip().split()
-        if words:
+        if words and '/' in words[0]:
             sent = '(ROOT (IP '
             for word in words:
                 w, p = word.split('/')
