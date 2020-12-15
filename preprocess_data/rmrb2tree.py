@@ -1,9 +1,8 @@
 #coding:utf8
 import argparse
 import codecs
-import src.trees as trees
-import os
-import sys
+from nltk import Tree
+
 def process(fin, fout):
     for line in fin:
         flag = True
@@ -18,7 +17,10 @@ def process(fin, fout):
             except:
                 flag = False
         sent += '))'
-        trees.tree_from_str(sent)
+        try:
+            t = Tree.fromstring(sent)
+        except:
+            flag = False
         if flag:
             fout.write(sent + '\n')
 def main(i, o):
