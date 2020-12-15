@@ -380,7 +380,6 @@ def run_test(args):
         predicted, _ = parser.parse_batch(subbatch_sentences)
         del _
         test_predicted.extend([p.convert() for p in predicted])
-
     # The tree loader does some preprocessing to the trees (e.g. stripping TOP
     # symbols or SPMRL morphological features). We compare with the input file
     # directly to be extra careful about not corrupting the evaluation. We also
@@ -393,7 +392,8 @@ def run_test(args):
     if args.test_path_raw is not None:
         print("Comparing with raw trees from", args.test_path_raw)
         ref_gold_path = args.test_path_raw
-
+    for i in test_predicted:
+        print(i.linearize())
     test_fscore = evaluate.evalb(args.evalb_dir, test_treebank, test_predicted, ref_gold_path=ref_gold_path)
 
     print(
@@ -527,8 +527,8 @@ def main():
     subparser = subparsers.add_parser("test")
     subparser.set_defaults(callback=run_test)
     subparser.add_argument("--model-path-base", required=True)
-    subparser.add_argument("--evalb-dir", default="EVALB/")
-    subparser.add_argument("--test-path", default="data/23.auto.clean")
+    subparser.add_argument("--evalb-dir", default="../EVALB/")
+    subparser.add_argument("--test-path", default="../data/dev.small")
     subparser.add_argument("--test-path-raw", type=str)
     subparser.add_argument("--eval-batch-size", type=int, default=1)
 
