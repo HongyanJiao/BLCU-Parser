@@ -195,7 +195,11 @@ def process(fin, fout):
         except:
             flag = False
         if flag:
-            fout.write(sent + '\n')
+            t = Tree.fromstring(sent)
+            wordlist = t.leaves()
+            wordstr = ''.join(wordlist)
+            if len(wordstr) <= 500:
+                fout.write(sent + '\n')
 def main(i, o):
     fin = codecs.open(i, 'r', 'utf8')
     fout = codecs.open(o, 'w', 'utf8')
