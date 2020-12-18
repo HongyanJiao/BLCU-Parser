@@ -684,7 +684,7 @@ class NKChartParser(nn.Module):
         self.use_tags = hparams.use_tags
 
         self.morpho_emb_dropout = None
-        if hparams.use_chars_lstm or hparams.use_bert or hparams.use_bert_only or hparams.user_roberta:
+        if hparams.use_chars_lstm or hparams.use_bert or hparams.use_bert_only or hparams.use_roberta:
             self.morpho_emb_dropout = hparams.morpho_emb_dropout
         else:
             assert self.emb_types, "Need at least one of: use_tags, use_words, use_chars_lstm, use_bert, use_bert_only"
@@ -796,6 +796,8 @@ class NKChartParser(nn.Module):
             hparams['use_bert'] = False
         if 'use_bert_only' not in hparams:
             hparams['use_bert_only'] = False
+        if 'use_roberta' not in hparams:
+            hparams['use_roberta'] = False
         if 'predict_tags' not in hparams:
             hparams['predict_tags'] = False
         if 'bert_transliterate' not in hparams:
