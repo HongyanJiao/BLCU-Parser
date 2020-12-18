@@ -569,6 +569,15 @@ def get_bert(bert_model, bert_do_lower_case):
         tokenizer = BertTokenizer.from_pretrained(bert_model, do_lower_case=bert_do_lower_case)
     bert = BertModel.from_pretrained(bert_model)
     return tokenizer, bert
+def get_roberta(roberta_model, roberta_do_lower_case):
+    from transformers import (WEIGHTS_NAME, RobertaModel,
+                                      RobertaConfig,
+                                      RobertaForSequenceClassification,
+                                      RobertaTokenizer)
+    tokenizer = RobertaTokenizer.from_pretrained(roberta_model, do_lower_case=roberta_do_lower_case, add_special_tokens=True)
+    roberta = RobertaModel.from_pretrained(roberta_model)
+
+    return tokenizer, roberta
 def get_bert_backup(bert_model, bert_do_lower_case):
     # Avoid a hard dependency on BERT by only importing it if it's being used
     import transformers
@@ -707,6 +716,18 @@ class NKChartParser(nn.Module):
                 self.project_bert = nn.Linear(d_bert_annotations, hparams.d_model, bias=False)
             else:
                 self.project_bert = nn.Linear(d_bert_annotations, self.d_content, bias=False)
+        elif hparams.use_roberta:
+            self.roberta_tokenizer, self.roberta = get_roberta(hparams.roberta_model, hparams.roberta_do_lower_case)
+            if hparams.bert_transliterate:
+                from transliterate import TRANSLITERATIONS
+                self.bert_transliterate = TRANSLITERATIONS[hparams.bert_transliterate]
+            else:
+                self.bert_transliterate = None
+
+            d_roberta_annotations = self.roberta.pooler.dense.in_features
+            self.roberta_max_len = self.roberta.embeddings.position_embeddings.num_embeddings
+
+            self.project_roberta = nn.Linear(d_roberta_annotations, self.d_content, bias=False)
 
         if not hparams.use_bert_only:
             self.embedding = MultiLevelEmbedding(
