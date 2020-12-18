@@ -76,6 +76,8 @@ def make_hparams():
         char_lstm_input_dropout=0.2,
 
         bert_model="bert-base-chinese",
+        roberta_model="chinese_roberta_L-4_H-256",
+        roberta_do_lower_case=False,
         bert_do_lower_case=True,
         bert_transliterate="",
         )
