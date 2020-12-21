@@ -63,6 +63,10 @@ def Count(g_struct, p_struct):
 
 
 def ComputeF1(gold_path, predict_path):
+    micro_p = 0.0
+    micro_r = 0.0
+    micro_f = 0.0
+
     g_struct = ReadTrees(gold_path)
     p_struct = ReadTrees(predict_path)
     assert len(g_struct) == len(p_struct), f'{g_struct},{p_struct}'
@@ -112,10 +116,12 @@ if __name__=='__main__':
     F1, input_all = ComputeF1(args.g, args.p)
 
     out_array = list()
+
     for i in range(len(labels)):
         tmp_arr = [labels[i], F1[i][0], F1[i][1], F1[i][2], input_all[labels[i]]]
         # print('{}:{}个 p:{:.3f} r:{:.3f} f:{:.3f}'.format(labels[i],input_all[labels[i]], F1[i][0], F1[i][1], F1[i][2]))
         out_array.append(tmp_arr)
     dataframe = pd.DataFrame(out_array, columns = ['labels', 'Precision', 'Recall','F1', 'Num-of-labels'])
     dataframe.to_csv(args.o, float_format = '%.4f', encoding='utf8')
+    print(micro_p, micro_r, micro_f)
 

@@ -958,7 +958,7 @@ class NKChartParser(nn.Module):
                     try:
                         word_start_mask[len(tokens)] = 1
                     except:
-                        print(sentence)
+                        print('out of index:', sentence, word_start_mask, tokens)
                     word_end_mask[-1] = 1
                     tokens.extend(word_tokens)
                 tokens.append("[SEP]")
