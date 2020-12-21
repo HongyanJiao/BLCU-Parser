@@ -80,7 +80,10 @@ def ComputeF1(gold_path, predict_path):
         else:
             p = mr / ma
             r = mr / ia
-            f = (2 * p * r) / (p + r)
+            try:
+                f = (2 * p * r) / (p + r)
+            except:
+                f = 0.0
             ret = [p,r,f]
         F1.append(ret)
     return F1, input_all
