@@ -21,9 +21,10 @@ def Tree2DataStruct(train_treebank):
         while nodes:
             node = nodes.pop()
             if isinstance(node, trees.InternalParseNode):
-                label = node.label[-1]
-                if label in labels:
-                    one_tree_struct.append(ChunkStruct(label, node.left, node.right))
+                # label = node.label[-1]
+                for label in node.label:
+                    if label in labels:
+                        one_tree_struct.append(ChunkStruct(label, node.left, node.right))
                 nodes.extend(reversed(node.children))
         all_structs.append(one_tree_struct)
     return all_structs
@@ -116,5 +117,5 @@ if __name__=='__main__':
         # print('{}:{}个 p:{:.3f} r:{:.3f} f:{:.3f}'.format(labels[i],input_all[labels[i]], F1[i][0], F1[i][1], F1[i][2]))
         out_array.append(tmp_arr)
     dataframe = pd.DataFrame(out_array, columns = ['labels', 'Precision', 'Recall','F1', 'Num-of-labels'])
-    dataframe.to_csv('../../out.csv', float_format = '%.4f', encoding='utf8')
+    dataframe.to_csv(args.o, float_format = '%.4f', encoding='utf8')
 
