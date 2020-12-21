@@ -105,6 +105,27 @@ def get_labels():
         for i in labels:
             label_set.add(i.replace("'","").replace(' ',''))
     print(label_set)
+def get_labels_nums(path, o):
+    train_treebank = trees.load_trees(path)
+    train_parse = [tree.convert() for tree in train_treebank]
+    labels2num = init_dict()
+    for tree in train_parse:
+        nodes = [tree]
+        while nodes:
+            node = nodes.pop()
+            if isinstance(node, trees.InternalParseNode):
+                # label = node.label[-1]
+                for label in node.label:
+                    if label in labels:
+                        labels2num[label] += 1
+                nodes.extend(reversed(node.children))
+    out_array = []
+    for k, v in labels2num.items():
+        out_array.append([k,v])
+    dataframe = pd.DataFrame(out_array, columns=['labels', 'number'])
+    dataframe.to_csv(o, float_format='%.4f', encoding='utf8')
+
+
 
 if __name__=='__main__':
     # get_labels()
@@ -112,16 +133,17 @@ if __name__=='__main__':
     par.add_argument('--g', help='gold path', default='../../data/dev.small')
     par.add_argument('--p', help='predict path',default='../../data/dev.small')
     par.add_argument('--o', help='output path', default='../../out.csv')
+    par.add_argument('--i', help='input path', default='../../data/dev.small')
     args = par.parse_args()
-    F1, input_all = ComputeF1(args.g, args.p)
-
-    out_array = list()
-
-    for i in range(len(labels)):
-        tmp_arr = [labels[i], F1[i][0], F1[i][1], F1[i][2], input_all[labels[i]]]
-        # print('{}:{}个 p:{:.3f} r:{:.3f} f:{:.3f}'.format(labels[i],input_all[labels[i]], F1[i][0], F1[i][1], F1[i][2]))
-        out_array.append(tmp_arr)
-    dataframe = pd.DataFrame(out_array, columns = ['labels', 'Precision', 'Recall','F1', 'Num-of-labels'])
-    dataframe.to_csv(args.o, float_format = '%.4f', encoding='utf8')
-    print(micro_p, micro_r, micro_f)
+    # F1, input_all = ComputeF1(args.g, args.p)
+    #
+    # out_array = list()
+    #
+    # for i in range(len(labels)):
+    #     tmp_arr = [labels[i], F1[i][0], F1[i][1], F1[i][2], input_all[labels[i]]]
+    #     # print('{}:{}个 p:{:.3f} r:{:.3f} f:{:.3f}'.format(labels[i],input_all[labels[i]], F1[i][0], F1[i][1], F1[i][2]))
+    #     out_array.append(tmp_arr)
+    # dataframe = pd.DataFrame(out_array, columns = ['labels', 'Precision', 'Recall','F1', 'Num-of-labels'])
+    # dataframe.to_csv(args.o, float_format = '%.4f', encoding='utf8')
+    get_labels_nums(args.i, args.o)
 
