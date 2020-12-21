@@ -264,7 +264,7 @@ def run_train(args, hparams):
             del _
             dev_predicted.extend([p.convert() for p in predicted])
 
-        dev_fscore = evaluate.evalb(args.evalb_dir, dev_treebank, dev_predicted)
+        dev_fscore = evaluate.evalb(args.evalb_dir, dev_treebank, dev_predicted, None, False)
 
         print(
             "dev-fscore {} "
@@ -397,7 +397,7 @@ def run_test(args):
         ref_gold_path = args.test_path_raw
     for i in test_predicted:
         print(i.linearize())
-    test_fscore = evaluate.evalb(args.evalb_dir, test_treebank, test_predicted, ref_gold_path=ref_gold_path)
+    test_fscore = evaluate.evalb(args.evalb_dir, test_treebank, test_predicted, ref_gold_path=ref_gold_path, is_print=True)
 
     print(
         "test-fscore {} "
@@ -450,7 +450,7 @@ def run_ensemble(args):
         del _
         test_predicted.extend([p.convert() for p in predicted])
 
-    test_fscore = evaluate.evalb(args.evalb_dir, test_treebank, test_predicted, ref_gold_path=args.test_path)
+    test_fscore = evaluate.evalb(args.evalb_dir, test_treebank, test_predicted, ref_gold_path=args.test_path, is_print=True)
 
     print(
         "test-fscore {} "

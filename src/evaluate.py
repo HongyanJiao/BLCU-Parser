@@ -3,7 +3,6 @@ import os.path
 import re
 import subprocess
 import tempfile
-
 import trees
 
 class FScore(object):
@@ -22,7 +21,7 @@ class FScore(object):
             return "(Recall={:.2f}, Precision={:.2f}, FScore={:.2f}, CompleteMatch={:.2f})".format(
                 self.recall, self.precision, self.fscore, self.complete_match)
 
-def evalb(evalb_dir, gold_trees, predicted_trees, ref_gold_path=None):
+def evalb(evalb_dir, gold_trees, predicted_trees, ref_gold_path=None, is_print=False):
     assert os.path.exists(evalb_dir)
     evalb_program_path = os.path.join(evalb_dir, "evalb")
     evalb_spmrl_program_path = os.path.join(evalb_dir, "evalb_spmrl")
@@ -79,8 +78,11 @@ def evalb(evalb_dir, gold_trees, predicted_trees, ref_gold_path=None):
     subprocess.run(command, shell=True)
 
     fscore = FScore(math.nan, math.nan, math.nan, math.nan)
+
     with open(output_path) as infile:
         for line in infile:
+            # if is_print:
+            #     print(line)
             match = re.match(r"Bracketing Recall\s+=\s+(\d+\.\d+)", line)
             if match:
                 fscore.recall = float(match.group(1))
