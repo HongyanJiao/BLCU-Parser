@@ -112,5 +112,5 @@ if __name__=='__main__':
         # print('{}:{}个 p:{:.3f} r:{:.3f} f:{:.3f}'.format(labels[i],input_all[labels[i]], F1[i][0], F1[i][1], F1[i][2]))
         out_array.append(tmp_arr)
     dataframe = pd.DataFrame(out_array, columns = ['labels', 'Precision', 'Recall','F1', 'Num-of-labels'])
-    dataframe.to_csv('../../out.csv', encoding='utf8')
+    dataframe.to_csv('../../out.csv', float_format = '%.4f', encoding='utf8')
 

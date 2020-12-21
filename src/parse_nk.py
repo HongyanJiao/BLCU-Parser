@@ -955,7 +955,10 @@ class NKChartParser(nn.Module):
                     for _ in range(len(word_tokens)):
                         word_start_mask.append(0)
                         word_end_mask.append(0)
-                    word_start_mask[len(tokens)] = 1
+                    try:
+                        word_start_mask[len(tokens)] = 1
+                    except:
+                        print(sentence)
                     word_end_mask[-1] = 1
                     tokens.extend(word_tokens)
                 tokens.append("[SEP]")
