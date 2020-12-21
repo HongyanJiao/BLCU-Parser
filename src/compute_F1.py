@@ -103,6 +103,7 @@ if __name__=='__main__':
     par = argparse.ArgumentParser()
     par.add_argument('--g', help='gold path', default='../../data/dev.small')
     par.add_argument('--p', help='predict path',default='../../data/dev.small')
+    par.add_argument('--o', help='output path', default='../../out.csv')
     args = par.parse_args()
     F1, input_all = ComputeF1(args.g, args.p)
 
