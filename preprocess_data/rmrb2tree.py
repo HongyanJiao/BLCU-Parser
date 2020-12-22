@@ -177,7 +177,7 @@ def tree_from_str(treebank):
 def process(fin, fout):
     for line in fin:
         flag = True
-        words = line.strip().split()
+        words = line.strip().replace('(', '（').replace(')', '）').split()
         sent = '(ROOT (IP '
         if not words:
             flag = False
