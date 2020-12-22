@@ -180,14 +180,9 @@ def tree_from_str(treebank, strip_top=False, strip_spmrl_features=True):
 
     return trees[0]
 
-def load_trees(path, strip_top=False, strip_spmrl_features=True):
+def load_trees(path):
     with open(path) as infile:
         treebank = infile.read()
-
-    # Features bounded by `##` may contain spaces, so if we strip the features
-    # we need to do so prior to tokenization
-    if strip_spmrl_features:
-        treebank = "".join(treebank.split("##")[::2])
 
     tokens = treebank.replace("(", " ( ").replace(")", " ) ").split()
 
@@ -212,20 +207,12 @@ def load_trees(path, strip_top=False, strip_spmrl_features=True):
                 trees.append(LeafTreebankNode(label, word))
 
             while paren_count > 0:
-                assert tokens[index] == ")"
+                assert tokens[index] == ")", f'{tokens[index-4],tokens[index-3],tokens[index-2],tokens[index-1]}'
                 index += 1
                 paren_count -= 1
-
         return trees, index
 
     trees, index = helper(0)
     assert index == len(tokens)
-
-
-    if strip_top:
-        for i, tree in enumerate(trees):
-            if tree.label in ("TOP", "ROOT"):
-                assert len(tree.children) == 1
-                trees[i] = tree.children[0]
 
     return trees
