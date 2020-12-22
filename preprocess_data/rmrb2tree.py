@@ -3,8 +3,7 @@ import argparse
 import codecs
 from nltk import Tree
 import collections.abc
-import gzip
-
+import re
 class TreebankNode(object):
     pass
 
@@ -198,7 +197,12 @@ def process(fin, fout):
             t = Tree.fromstring(sent)
             wordlist = t.leaves()
             wordstr = ''.join(wordlist)
-            if len(wordstr) <= 500:
+            if len(wordstr) <= 510:
+                sent = re.sub(
+                    '[\001\002\003\004\005\006\007\x08\x09\x0a\x0b\x0c\x0d\x0e\x0f\x10\x11\x12\x13\x14\x15\x16\x17\x18\x19\x1a]+',
+                    '', sent)
+                # 去除不可见字符
+
                 fout.write(sent + '\n')
 def main(i, o):
     fin = codecs.open(i, 'r', 'utf8')
