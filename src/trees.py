@@ -207,7 +207,8 @@ def load_trees(path):
                 trees.append(LeafTreebankNode(label, word))
 
             while paren_count > 0:
-                assert tokens[index] == ")", f'{tokens[index-4],tokens[index-3],tokens[index-2],tokens[index-1]}'
+                assert tokens[index] == ")", f'{tokens[index-4]},{tokens[index-3]},\
+                {tokens[index-2]},{tokens[index-1]}'
                 index += 1
                 paren_count -= 1
         return trees, index

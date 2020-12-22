@@ -176,14 +176,14 @@ def tree_from_str(treebank):
 
 def process(fin, fout, n):
     for sent in fin:
+        sent = re.sub(
+                    '[\001\002\003\004\005\006\007\x08\x09\x0a\x0b\x0c\x0d\x0e\x0f\x10\x11\x12\x13\x14\x15\x16\x17\x18\x19\x1a]+',
+                    '', sent)
         flag = True
         try:
             tree_from_str(sent)
         except:
             flag = False
-        sent = re.sub(
-                    '[\001\002\003\004\005\006\007\x08\x09\x0a\x0b\x0c\x0d\x0e\x0f\x10\x11\x12\x13\x14\x15\x16\x17\x18\x19\x1a]+',
-                    '', sent)
         if flag:
             t = Tree.fromstring(sent)
             wordlist = t.leaves()
