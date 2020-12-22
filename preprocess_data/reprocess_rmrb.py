@@ -174,7 +174,7 @@ def tree_from_str(treebank):
 
     return trees[0]
 
-def process(fin, fout):
+def process(fin, fout, n):
     for sent in fin:
         flag = True
         try:
@@ -188,16 +188,17 @@ def process(fin, fout):
             t = Tree.fromstring(sent)
             wordlist = t.leaves()
             wordstr = ''.join(wordlist)
-            if len(wordstr) <= 500:
+            if len(wordstr) <= n:
                 fout.write(sent + '\n')
-def main(i, o):
+def main(i, o, n):
     fin = codecs.open(i, 'r', 'utf8')
     fout = codecs.open(o, 'w', 'utf8')
-    process(fin, fout)
+    process(fin, fout, n)
 
 if __name__=='__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--i', default='../../../data/rmrb.tree')
     parser.add_argument('--o', default='../../../data/rmrb1.tree')
+    parser.add_argument('--n', type=int, default=500)
     args = parser.parse_args()
-    main(args.i, args.o)
+    main(args.i, args.o, args.n)
