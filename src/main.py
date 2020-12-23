@@ -207,7 +207,8 @@ def run_train(args, hparams):
             label_vocab,
             char_vocab,
             hparams,
-            info['spec'],
+            # info['spec'],
+            None,
             info['state_dict'],
         )
     else:

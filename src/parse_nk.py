@@ -781,8 +781,8 @@ class NKChartParser(nn.Module):
 
         if use_cuda:
             self.cuda()
-        if info_spec and info_state_dict:
-            self.from_spec_model(info_spec, info_state_dict)
+        if info_state_dict:
+            self.from_spec_model(self.spec, info_state_dict)
 
     @property
     def model(self):
