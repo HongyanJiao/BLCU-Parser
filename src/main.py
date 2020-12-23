@@ -190,8 +190,9 @@ def run_train(args, hparams):
         print_vocabulary("Label", label_vocab)
 
     print("Initializing model...")
+    # load model to fine-tune
+    load_path = args.load_path
 
-    load_path = None
     if load_path is not None:
         print(f"Loading parameters from {load_path}")
         info = torch_load(load_path)
@@ -209,7 +210,7 @@ def run_train(args, hparams):
 
     trainable_parameters = [param for param in parser.parameters() if param.requires_grad]
     total = sum([param.nelement() for param in trainable_parameters])
-    print("Number of parameter: %.3fM" % (total / 1e6))
+    print("Number of parameter: %.2fM" % (total / 1e6))
     param_list = list(parser.named_parameters())
     for i in param_list:
         print(i[0], i[1].data.shape)
@@ -516,6 +517,7 @@ def main():
     subparser.set_defaults(callback=lambda args: run_train(args, hparams))
     hparams.populate_arguments(subparser)
     subparser.add_argument("--numpy-seed", type=int)
+    subparser.add_argument("--load-path", default='../../models/_dev=10.17.pt',)
     subparser.add_argument("--model-path-base", default='../../models/',required=False)
     subparser.add_argument("--evalb-dir", default="../EVALB/")
     subparser.add_argument("--train-path", default="../../data/train.small")
