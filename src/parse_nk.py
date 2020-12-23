@@ -784,8 +784,15 @@ class NKChartParser(nn.Module):
         return self.state_dict()
 
     @classmethod
-    def from_spec(cls, spec, model):
+    def from_spec(cls, spec, model,tag_vocab, word_vocab,
+                                                  label_vocab,
+                                                  char_vocab):
         spec = spec.copy()
+        spec['tag_vocab'] = tag_vocab
+        spec['word_vocab'] = word_vocab
+        spec['label_vocab'] = label_vocab
+        spec['char_vocab'] = char_vocab
+
         hparams = spec['hparams']
         if 'use_chars_concat' in hparams and hparams['use_chars_concat']:
             raise NotImplementedError("Support for use_chars_concat has been removed")

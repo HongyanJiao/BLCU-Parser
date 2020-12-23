@@ -196,7 +196,12 @@ def run_train(args, hparams):
     if load_path is not None:
         print(f"Loading parameters from {load_path}")
         info = torch_load(load_path)
-        parser = parse_nk.NKChartParser.from_spec(info['spec'], info['state_dict'])
+        parser = parse_nk.NKChartParser.from_spec(info['spec'], info['state_dict'],
+                                                  tag_vocab,
+                                                  word_vocab,
+                                                  label_vocab,
+                                                  char_vocab
+                                                  )
     else:
         parser = parse_nk.NKChartParser(
             tag_vocab,
