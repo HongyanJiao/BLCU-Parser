@@ -841,10 +841,7 @@ class BLCUParser(nn.Module):
                                                   label_vocab,
                                                   char_vocab):
         spec = spec.copy()
-        spec['tag_vocab'] = tag_vocab
-        spec['word_vocab'] = word_vocab
-        spec['label_vocab'] = label_vocab
-        spec['char_vocab'] = char_vocab
+
         hparams = spec['hparams']
         if 'use_chars_concat' in hparams and hparams['use_chars_concat']:
             raise NotImplementedError("Support for use_chars_concat has been removed")
@@ -866,7 +863,21 @@ class BLCUParser(nn.Module):
         res = cls(**spec)
         if use_cuda:
             res.cpu()
+        # label_param_keys = ['f_label.0.weight',
+        #                     'f_label.0.bias',
+        #                     'f_label.1.a_2',
+        #                     'f_label.1.b_2',
+        #                     'f_label.3.weight',
+        #                     'f_label.3.bias']
+        # for k in label_param_keys:
+        #     model.pop(k)
+        # state = {k: v for k, v in res.state_dict().items() if k not in label_param_keys}
+        # res.load_state_dict(state)
         res.load_state_dict(model)
+        spec['tag_vocab'] = tag_vocab
+        spec['word_vocab'] = word_vocab
+        spec['label_vocab'] = label_vocab
+        spec['char_vocab'] = char_vocab
         label_dim = label_vocab.size - 1
         # label_dim = 300
         f_label = nn.Sequential(
