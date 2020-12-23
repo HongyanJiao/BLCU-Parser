@@ -874,10 +874,11 @@ class BLCUParser(nn.Module):
         # state = {k: v for k, v in res.state_dict().items() if k not in label_param_keys}
         # res.load_state_dict(state)
         res.load_state_dict(model)
-        spec['tag_vocab'] = tag_vocab
-        spec['word_vocab'] = word_vocab
-        spec['label_vocab'] = label_vocab
-        spec['char_vocab'] = char_vocab
+        res.label_vocab = label_vocab
+        # spec['tag_vocab'] = tag_vocab
+        # spec['word_vocab'] = word_vocab
+        # spec['label_vocab'] = label_vocab
+        # spec['char_vocab'] = char_vocab
         label_dim = label_vocab.size - 1
         # label_dim = 300
         f_label = nn.Sequential(
