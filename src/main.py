@@ -186,8 +186,9 @@ def run_train(args, hparams):
 
     if args.print_vocabs:
         print_vocabulary("Tag", tag_vocab)
-        print_vocabulary("Word", word_vocab)
+        # print_vocabulary("Word", word_vocab)
         print_vocabulary("Label", label_vocab)
+        print("Word", word_vocab.size)
 
     print("Initializing model...")
     # load model to fine-tune
@@ -195,24 +196,22 @@ def run_train(args, hparams):
     if load_path is not None:
         print(f"Loading parameters from {load_path}")
         info = torch_load(load_path)
-        # parser = parse_nk.NKChartParser.from_spec(info['spec'], info['state_dict'],
-        #                                           tag_vocab,
-        #                                           word_vocab,
-        #                                           label_vocab,
-        #                                           char_vocab
-        #                                           )
-        parser = parse_nk.NKChartParser(
-            tag_vocab,
-            word_vocab,
-            label_vocab,
-            char_vocab,
-            hparams,
-            # info['spec'],
-            None,
-            info['state_dict'],
-        )
+        parser = parse_nk.BLCUParser.from_spec(info['spec'], info['state_dict'],
+                                                  tag_vocab,
+                                                  word_vocab,
+                                                  label_vocab,
+                                                  char_vocab
+                                                  )
+        # parser = parse_nk.BLCUParser(
+        #     tag_vocab,
+        #     word_vocab,
+        #     label_vocab,
+        #     char_vocab,
+        #     hparams,
+        #     info['state_dict'],
+        # )
     else:
-        parser = parse_nk.NKChartParser(
+        parser = parse_nk.BLCUParser(
             tag_vocab,
             word_vocab,
             label_vocab,

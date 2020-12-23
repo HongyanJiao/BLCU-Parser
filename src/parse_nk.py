@@ -637,7 +637,7 @@ class Encoder(nn.Module):
 
 # %%
 
-class NKChartParser(nn.Module):
+class BLCUParser(nn.Module):
     # We never actually call forward() end-to-end as is typical for pytorch
     # modules, but this inheritance brings in good stuff like state dict
     # management.
@@ -648,7 +648,6 @@ class NKChartParser(nn.Module):
             label_vocab,
             char_vocab,
             hparams,
-            info_spec=None,
             info_state_dict=None,
     ):
         super().__init__()
@@ -781,62 +780,61 @@ class NKChartParser(nn.Module):
 
         if use_cuda:
             self.cuda()
-        if info_state_dict:
-            self.from_spec_model(self.spec, info_state_dict)
+
 
     @property
     def model(self):
         return self.state_dict()
 
-    @classmethod
-    def from_spec_model(cls, spec, model):
-        spec = spec.copy()
-
-        hparams = spec['hparams']
-        if 'use_chars_concat' in hparams and hparams['use_chars_concat']:
-            raise NotImplementedError("Support for use_chars_concat has been removed")
-        if 'sentence_max_len' not in hparams:
-            hparams['sentence_max_len'] = 512
-
-        if 'use_bert' not in hparams:
-            hparams['use_bert'] = False
-        if 'use_bert_only' not in hparams:
-            hparams['use_bert_only'] = False
-        if 'use_roberta' not in hparams:
-            hparams['use_roberta'] = False
-        if 'predict_tags' not in hparams:
-            hparams['predict_tags'] = False
-        if 'bert_transliterate' not in hparams:
-            hparams['bert_transliterate'] = ""
-
-        spec['hparams'] = nkutil.HParams(**hparams)
-        res = cls(**spec)
-        if use_cuda:
-            res.cpu()
-        res.load_state_dict(model)
-        state = {k: v for k, v in res.state_dict().items() if k not in ['f_label.3.weight', 'f_label.3.bias']}
-        state.update(model)
-        res.load_state_dict(state)
-        # label_dim = label_vocab.size - 1
-        # label_dim = 300
-        # print('label_vocab_size:', label_vocab.size)
-        # new_dict = {'f_label.3.weight':nn.Parameter(torch_t.FloatTensor(label_dim,hparams["d_label_hidden"])),
-        #             'f_label.3.bias':nn.Parameter(torch_t.FloatTensor(label_dim))}
-        # state.update(new_dict)
-        # model.update(new_dict)
-        # res.load_state_dict(model)
-        # print(res.state_dict()['f_label.3.weight'].shape)
-        # state = {k: v for k,v in res.state_dict().items() if k not in model}
-        # state.update(model)
-
-        # else:
-        #     state = {k: v for k,v in res.state_dict().items() if k not in model}
-        #     state.update(model)
-        #     res.load_state_dict(state)
-        if use_cuda:
-            res.cuda()
-        print(res)
-        return res
+    # @classmethod
+    # def from_spec_model(cls, spec, model):
+    #     spec = spec.copy()
+    #
+    #     hparams = spec['hparams']
+    #     if 'use_chars_concat' in hparams and hparams['use_chars_concat']:
+    #         raise NotImplementedError("Support for use_chars_concat has been removed")
+    #     if 'sentence_max_len' not in hparams:
+    #         hparams['sentence_max_len'] = 512
+    #
+    #     if 'use_bert' not in hparams:
+    #         hparams['use_bert'] = False
+    #     if 'use_bert_only' not in hparams:
+    #         hparams['use_bert_only'] = False
+    #     if 'use_roberta' not in hparams:
+    #         hparams['use_roberta'] = False
+    #     if 'predict_tags' not in hparams:
+    #         hparams['predict_tags'] = False
+    #     if 'bert_transliterate' not in hparams:
+    #         hparams['bert_transliterate'] = ""
+    #
+    #     spec['hparams'] = nkutil.HParams(**hparams)
+    #     res = cls(**spec)
+    #     if use_cuda:
+    #         res.cpu()
+    #     res.load_state_dict(model)
+    #     state = {k: v for k, v in res.state_dict().items() if k not in ['f_label.3.weight', 'f_label.3.bias']}
+    #     state.update(model)
+    #     res.load_state_dict(state)
+    #     # label_dim = label_vocab.size - 1
+    #     # label_dim = 300
+    #     # print('label_vocab_size:', label_vocab.size)
+    #     # new_dict = {'f_label.3.weight':nn.Parameter(torch_t.FloatTensor(label_dim,hparams["d_label_hidden"])),
+    #     #             'f_label.3.bias':nn.Parameter(torch_t.FloatTensor(label_dim))}
+    #     # state.update(new_dict)
+    #     # model.update(new_dict)
+    #     # res.load_state_dict(model)
+    #     # print(res.state_dict()['f_label.3.weight'].shape)
+    #     # state = {k: v for k,v in res.state_dict().items() if k not in model}
+    #     # state.update(model)
+    #
+    #     # else:
+    #     #     state = {k: v for k,v in res.state_dict().items() if k not in model}
+    #     #     state.update(model)
+    #     #     res.load_state_dict(state)
+    #     if use_cuda:
+    #         res.cuda()
+    #     print(res)
+    #     return res
 
     @classmethod
     def from_spec(cls, spec, model,tag_vocab, word_vocab,
@@ -847,7 +845,6 @@ class NKChartParser(nn.Module):
         spec['word_vocab'] = word_vocab
         spec['label_vocab'] = label_vocab
         spec['char_vocab'] = char_vocab
-
         hparams = spec['hparams']
         if 'use_chars_concat' in hparams and hparams['use_chars_concat']:
             raise NotImplementedError("Support for use_chars_concat has been removed")
@@ -870,6 +867,19 @@ class NKChartParser(nn.Module):
         if use_cuda:
             res.cpu()
         res.load_state_dict(model)
+        label_dim = label_vocab.size - 1
+        # label_dim = 300
+        f_label = nn.Sequential(
+            nn.Linear(hparams["d_model"], hparams["d_label_hidden"]),
+            LayerNormalization(hparams["d_label_hidden"]),
+            nn.ReLU(),
+            nn.Linear(hparams["d_label_hidden"], label_dim),
+            # nn.Linear(hparams.d_label_hidden, 300),
+        )
+        # res.f_label.state_dict()['3.weight'] = nn.Parameter(torch_t.FloatTensor(label_dim,hparams["d_label_hidden"]))
+        # res.f_label.state_dict()['3.bias'] = nn.Parameter(torch_t.FloatTensor(label_dim))
+        res.f_label = f_label
+
         # state = {k: v for k, v in res.state_dict().items() if k not in model}
         # label_dim = label_vocab.size - 1
         # label_dim = 300
@@ -889,6 +899,7 @@ class NKChartParser(nn.Module):
         #     res.load_state_dict(state)
         if use_cuda:
             res.cuda()
+        print(res)
         return res
 
     def split_batch(self, sentences, golds, subbatch_max_tokens=3000):
