@@ -202,14 +202,6 @@ def run_train(args, hparams):
                                                   label_vocab,
                                                   char_vocab
                                                   )
-        # parser = parse_nk.BLCUParser(
-        #     tag_vocab,
-        #     word_vocab,
-        #     label_vocab,
-        #     char_vocab,
-        #     hparams,
-        #     info['state_dict'],
-        # )
     else:
         parser = parse_nk.BLCUParser(
             tag_vocab,
@@ -229,8 +221,8 @@ def run_train(args, hparams):
     #     print(i[0], i[1].data.shape)
 
     trainer = torch.optim.Adam(trainable_parameters, lr=1., betas=(0.9, 0.98), eps=1e-9)
-    if load_path is not None:
-        trainer.load_state_dict(info['trainer'])
+    # if load_path is not None:
+    #     trainer.load_state_dict(info['trainer'])
 
     def set_lr(new_lr):
         for param_group in trainer.param_groups:

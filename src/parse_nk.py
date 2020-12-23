@@ -893,8 +893,7 @@ class BLCUParser(nn.Module):
         res.f_label = f_label
 
         # state = {k: v for k, v in res.state_dict().items() if k not in model}
-        # label_dim = label_vocab.size - 1
-        # label_dim = 300
+
         # print('label_vocab_size:', label_vocab.size)
         # new_dict = {'f_label.3.weight':nn.Parameter(torch_t.FloatTensor(label_dim,hparams["d_label_hidden"])),
         #             'f_label.3.bias':nn.Parameter(torch_t.FloatTensor(label_dim))}
