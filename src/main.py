@@ -195,12 +195,21 @@ def run_train(args, hparams):
     if load_path is not None:
         print(f"Loading parameters from {load_path}")
         info = torch_load(load_path)
-        parser = parse_nk.NKChartParser.from_spec(info['spec'], info['state_dict'],
-                                                  tag_vocab,
-                                                  word_vocab,
-                                                  label_vocab,
-                                                  char_vocab
-                                                  )
+        # parser = parse_nk.NKChartParser.from_spec(info['spec'], info['state_dict'],
+        #                                           tag_vocab,
+        #                                           word_vocab,
+        #                                           label_vocab,
+        #                                           char_vocab
+        #                                           )
+        parser = parse_nk.NKChartParser(
+            tag_vocab,
+            word_vocab,
+            label_vocab,
+            char_vocab,
+            hparams,
+            info['spec'],
+            info['state_dict'],
+        )
     else:
         parser = parse_nk.NKChartParser(
             tag_vocab,
@@ -216,8 +225,8 @@ def run_train(args, hparams):
     total = sum([param.nelement() for param in trainable_parameters])
     print("Number of parameter: %.2fM" % (total / 1e6))
     param_list = list(parser.named_parameters())
-    for i in param_list:
-        print(i[0], i[1].data.shape)
+    # for i in param_list:
+    #     print(i[0], i[1].data.shape)
 
     trainer = torch.optim.Adam(trainable_parameters, lr=1., betas=(0.9, 0.98), eps=1e-9)
     if load_path is not None:
