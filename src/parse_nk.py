@@ -817,9 +817,9 @@ class NKChartParser(nn.Module):
         # if not hparams['use_elmo']:
         res.load_state_dict(model)
         # else:
-        #     state = {k: v for k,v in res.state_dict().items() if k not in model}
-        #     state.update(model)
-        #     res.load_state_dict(state)
+        state = {k: v for k,v in res.state_dict().items() if 'label' in k or k not in model}
+        state.update(model)
+        res.load_state_dict(state)
         if use_cuda:
             res.cuda()
         return res
