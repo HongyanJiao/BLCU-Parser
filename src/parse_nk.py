@@ -762,6 +762,7 @@ class NKChartParser(nn.Module):
             LayerNormalization(hparams.d_label_hidden),
             nn.ReLU(),
             nn.Linear(hparams.d_label_hidden, label_vocab.size - 1),
+            # nn.Linear(hparams.d_label_hidden, 300),
             )
 
         if hparams.predict_tags:
@@ -814,12 +815,23 @@ class NKChartParser(nn.Module):
         res = cls(**spec)
         if use_cuda:
             res.cpu()
-        # if not hparams['use_elmo']:
         res.load_state_dict(model)
+        # state = {k: v for k, v in res.state_dict().items() if k not in model}
+        label_dim = label_vocab.size - 1
+
+        new_dict = {'f_label.3.weight':nn.Parameter(torch_t.FloatTensor(label_dim,hparams["d_label_hidden"])),
+                    'f_label.3.bias':nn.Parameter(torch_t.FloatTensor(label_dim))}
+        # state.update(new_dict)
+        model.update(new_dict)
+        res.load_state_dict(model)
+        # print(res.state_dict()['f_label.3.weight'].shape)
+        # state = {k: v for k,v in res.state_dict().items() if k not in model}
+        # state.update(model)
+
         # else:
-        state = {k: v for k,v in res.state_dict().items() if 'label' in k or k not in model}
-        state.update(model)
-        res.load_state_dict(state)
+        #     state = {k: v for k,v in res.state_dict().items() if k not in model}
+        #     state.update(model)
+        #     res.load_state_dict(state)
         if use_cuda:
             res.cuda()
         return res

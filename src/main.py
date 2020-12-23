@@ -192,7 +192,6 @@ def run_train(args, hparams):
     print("Initializing model...")
     # load model to fine-tune
     load_path = args.load_path
-
     if load_path is not None:
         print(f"Loading parameters from {load_path}")
         info = torch_load(load_path)
