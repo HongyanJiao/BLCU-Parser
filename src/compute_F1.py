@@ -63,9 +63,9 @@ def Count(g_struct, p_struct):
 
 
 def ComputeF1(gold_path, predict_path):
-    micro_p = 0.0
-    micro_r = 0.0
-    micro_f = 0.0
+    all_model_right = 0
+    all_model_all = 0
+    all_input_all = 0
 
     g_struct = ReadTrees(gold_path)
     p_struct = ReadTrees(predict_path)
@@ -79,6 +79,9 @@ def ComputeF1(gold_path, predict_path):
     '''
     for mr,ma,ia in zip(model_right.values(), model_all.values(), input_all.values()):
         ret = []
+        all_model_right += mr
+        all_model_all += ma
+        all_input_all += ia
         if ma==0 or ia==0:
             ret = [0,0,0]
             f=0
@@ -91,7 +94,10 @@ def ComputeF1(gold_path, predict_path):
                 f = 0.0
             ret = [p,r,f]
         F1.append(ret)
-    return F1, input_all
+    micro_p = all_model_right / all_model_all
+    micro_r = all_model_right / all_input_all
+    micro_f = (2 * micro_p * micro_r) / (micro_p + micro_r)
+    return F1, input_all, micro_p, micro_r, micro_f, all_input_all
 def get_labels():
     tmp = [('IP',), ('IP', 'NP-HLP'), ('IP', 'NP-NPRE'), ('IP', 'VP-HLP'), ('IP', 'VP-PRD'), ('IP', 'w'),
            ('NP-HLP',), ('NP-NPRE',), ('NP-OBJ',), ('NP-SBJ',), ('NULL-AUX',), ('NULL-CON',), ('NULL-HLP',),
@@ -128,22 +134,23 @@ def get_labels_nums(path, o):
 
 
 if __name__=='__main__':
-    # get_labels()
     par = argparse.ArgumentParser()
     par.add_argument('--g', help='gold path', default='../../data/dev.small')
     par.add_argument('--p', help='predict path',default='../../data/dev.small')
     par.add_argument('--o', help='output path', default='../../out.csv')
     par.add_argument('--i', help='input path', default='../../data/dev.small')
     args = par.parse_args()
-    # F1, input_all = ComputeF1(args.g, args.p)
-    #
-    # out_array = list()
-    #
-    # for i in range(len(labels)):
-    #     tmp_arr = [labels[i], F1[i][0], F1[i][1], F1[i][2], input_all[labels[i]]]
-    #     # print('{}:{}个 p:{:.3f} r:{:.3f} f:{:.3f}'.format(labels[i],input_all[labels[i]], F1[i][0], F1[i][1], F1[i][2]))
-    #     out_array.append(tmp_arr)
-    # dataframe = pd.DataFrame(out_array, columns = ['labels', 'Precision', 'Recall','F1', 'Num-of-labels'])
-    # dataframe.to_csv(args.o, float_format = '%.4f', encoding='utf8')
-    get_labels_nums(args.i, args.o)
+    # get_labels()
+    # get_labels_nums(args.i, args.o)
+    F1, input_all, micro_p, micro_r, micro_f, all_input = ComputeF1(args.g, args.p)
+    out_array = list()
+    for i in range(len(labels)):
+        tmp_arr = [labels[i], F1[i][0], F1[i][1], F1[i][2], input_all[labels[i]]]
+        # print('{}:{}个 p:{:.3f} r:{:.3f} f:{:.3f}'.format(labels[i],input_all[labels[i]], F1[i][0], F1[i][1], F1[i][2]))
+        out_array.append(tmp_arr)
+
+    out_array.append(['micro', micro_p, micro_r, micro_f, all_input])
+    dataframe = pd.DataFrame(out_array, columns = ['labels', 'Precision', 'Recall','F1', 'Num'])
+    dataframe.to_csv(args.o, float_format = '%.4f', encoding='utf8')
+
 

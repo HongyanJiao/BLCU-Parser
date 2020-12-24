@@ -13,12 +13,15 @@ def binarize(tree):
         return reduce(lambda x, y: Tree(label, (binarize(x), binarize(y))),tree)
         # Φ
         #return reduce(lambda x, y: Tree(label, (binarize(x), binarize(y))), tree)
-t = Tree.fromstring('(ROOT (IP (NP-SBJ (ns 中国) (n 特色) (n 大国) (n 外交) (w ，)) (VP-PRD (vn 诠释)) (NP-OBJ (ns 中国) (n 格局) (u 的) (a 宏大)) (w (w 。))))')
+# t = Tree.fromstring('(ROOT (IP (NP-SBJ (ns 中国) (n 特色) (n 大国) (n 外交) (w ，)) (VP-PRD (vn 诠释)) (NP-OBJ (ns 中国) (n 格局) (u 的) (a 宏大)) (w (w 。))))')
 #t=t.reverse()
 # t.draw()
-bt = binarize(t)
+t = Tree.fromstring('(NP-SBJ (tag (tag 中) (tag 国) ) (tag (tag 特) (tag 色)) (tag  (tag 大) (tag 国) ) (tag (tag 外) (tag 交)))')
+t.chomsky_normal_form()
 
-string = str(bt).replace('\n','')
+# bt = binarize(t)
+#
+string = str(t).replace('\n','')
 s1=' '.join(filter(lambda x: x, string.split(' ')))
 ret=s1.replace(' )',')')
 print(ret)
