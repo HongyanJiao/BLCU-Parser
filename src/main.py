@@ -377,7 +377,7 @@ def run_test(args):
 
     info = torch_load(args.model_path_base)
     assert 'hparams' in info['spec'], "Older savefiles not supported"
-    parser = parse_nk.NKChartParser.from_spec(info['spec'], info['state_dict'])
+    parser = parse_nk.BLCUParser.from_spec(info['spec'], info['state_dict'])
 
     print("Parsing test sentences...")
     start_time = time.time()
@@ -426,7 +426,7 @@ def run_ensemble(args):
 
         info = torch_load(model_path_base)
         assert 'hparams' in info['spec'], "Older savefiles not supported"
-        parser = parse_nk.NKChartParser.from_spec(info['spec'], info['state_dict'])
+        parser = parse_nk.BLCUParser.from_spec(info['spec'], info['state_dict'])
         parsers.append(parser)
 
     # Ensure that label scores charts produced by the models can be combined
@@ -478,7 +478,7 @@ def run_parse(args):
 
     info = torch_load(args.model_path_base)
     assert 'hparams' in info['spec'], "Older savefiles not supported"
-    parser = parse_nk.NKChartParser.from_spec(info['spec'], info['state_dict'])
+    parser = parse_nk.BLCUParser.from_spec(info['spec'], info['state_dict'])
 
     print("Parsing sentences...")
     with open(args.input_path) as input_file:
