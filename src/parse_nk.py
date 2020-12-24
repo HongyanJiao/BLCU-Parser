@@ -837,7 +837,7 @@ class BLCUParser(nn.Module):
     #     return res
 
     @classmethod
-    def from_spec(cls, spec, model,tag_vocab, word_vocab,
+    def from_spec_fine_tune(cls, spec, model,tag_vocab, word_vocab,
                                                   label_vocab,
                                                   char_vocab):
         spec = spec.copy()
@@ -911,6 +911,36 @@ class BLCUParser(nn.Module):
         if use_cuda:
             res.cuda()
         print(res)
+        return res
+    @classmethod
+    def from_spec(cls, spec, model):
+        spec = spec.copy()
+        hparams = spec['hparams']
+        if 'use_chars_concat' in hparams and hparams['use_chars_concat']:
+            raise NotImplementedError("Support for use_chars_concat has been removed")
+        if 'sentence_max_len' not in hparams:
+            hparams['sentence_max_len'] = 512
+        if 'use_bert' not in hparams:
+            hparams['use_bert'] = False
+        if 'use_bert_only' not in hparams:
+            hparams['use_bert_only'] = False
+        if 'predict_tags' not in hparams:
+            hparams['predict_tags'] = False
+        if 'bert_transliterate' not in hparams:
+            hparams['bert_transliterate'] = ""
+
+        spec['hparams'] = nkutil.HParams(**hparams)
+        res = cls(**spec)
+        if use_cuda:
+            res.cpu()
+        # if not hparams['use_elmo']:
+        res.load_state_dict(model)
+        # else:
+        #     state = {k: v for k,v in res.state_dict().items() if k not in model}
+        #     state.update(model)
+        #     res.load_state_dict(state)
+        if use_cuda:
+            res.cuda()
         return res
 
     def split_batch(self, sentences, golds, subbatch_max_tokens=3000):

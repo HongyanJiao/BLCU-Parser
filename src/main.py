@@ -196,7 +196,7 @@ def run_train(args, hparams):
     if load_path is not None:
         print(f"Loading parameters from {load_path}")
         info = torch_load(load_path)
-        parser = parse_nk.BLCUParser.from_spec(info['spec'], info['state_dict'],
+        parser = parse_nk.BLCUParser.from_spec_fine_tune(info['spec'], info['state_dict'],
                                                   tag_vocab,
                                                   word_vocab,
                                                   label_vocab,
