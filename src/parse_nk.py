@@ -934,7 +934,7 @@ class BLCUParser(nn.Module):
         if use_cuda:
             res.cpu()
         # if not hparams['use_elmo']:
-        res.load_state_dict(model)
+        res.load_state_dict(model, strict=False)
         # else:
         #     state = {k: v for k,v in res.state_dict().items() if k not in model}
         #     state.update(model)

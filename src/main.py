@@ -542,9 +542,9 @@ def main():
 
     subparser = subparsers.add_parser("test")
     subparser.set_defaults(callback=run_test)
-    subparser.add_argument("--model-path-base", default='../../models/fine-tuned_dev=4.00.pt')
+    subparser.add_argument("--model-path-base", default='../../models/fine-tuned_dev=1.96.pt')
     subparser.add_argument("--evalb-dir", default="../EVALB/")
-    subparser.add_argument("--test-path", default="../../data/dev.char")
+    subparser.add_argument("--test-path", default="../../data/train.char")
     subparser.add_argument("--test-path-raw", type=str)
     subparser.add_argument("--eval-batch-size", type=int, default=1)
 
