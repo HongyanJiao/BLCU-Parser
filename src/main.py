@@ -202,6 +202,11 @@ def run_train(args, hparams):
                                                   label_vocab,
                                                   char_vocab
                                                   )
+        # parser.spec['tag_vocab'] = tag_vocab
+        # parser.spec['word_vocab'] = word_vocab
+        parser.spec['label_vocab'] = label_vocab
+        # parser.spec['char_vocab'] = char_vocab
+
     else:
         parser = parse_nk.BLCUParser(
             tag_vocab,
@@ -522,10 +527,11 @@ def main():
     subparser.set_defaults(callback=lambda args: run_train(args, hparams))
     hparams.populate_arguments(subparser)
     subparser.add_argument("--numpy-seed", type=int)
-    subparser.add_argument("--load-path", default='../../models/_dev=10.17.pt',)
-    subparser.add_argument("--model-path-base", default='../../models/',required=False)
+    subparser.add_argument("--load-path", default='../../models/base_dev=6.32.pt')
+    # subparser.add_argument("--load-path", default=None)
+    subparser.add_argument("--model-path-base", default='../../models/fine-tuned',required=False)
     subparser.add_argument("--evalb-dir", default="../EVALB/")
-    subparser.add_argument("--train-path", default="../../data/train.small")
+    subparser.add_argument("--train-path", default="../../data/train.char")
     subparser.add_argument("--dev-path", default="../../data/dev.small")
     subparser.add_argument("--batch-size", type=int, default=32)
     subparser.add_argument("--subbatch-max-tokens", type=int, default=2000)
@@ -536,9 +542,9 @@ def main():
 
     subparser = subparsers.add_parser("test")
     subparser.set_defaults(callback=run_test)
-    subparser.add_argument("--model-path-base", required=True)
+    subparser.add_argument("--model-path-base", default='../../models/fine-tuned_dev=4.00.pt')
     subparser.add_argument("--evalb-dir", default="../EVALB/")
-    subparser.add_argument("--test-path", default="../../data/dev.small")
+    subparser.add_argument("--test-path", default="../../data/dev.char")
     subparser.add_argument("--test-path-raw", type=str)
     subparser.add_argument("--eval-batch-size", type=int, default=1)
 

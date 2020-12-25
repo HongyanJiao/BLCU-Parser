@@ -943,6 +943,7 @@ class BLCUParser(nn.Module):
             res.cuda()
         return res
 
+
     def split_batch(self, sentences, golds, subbatch_max_tokens=3000):
         if self.bert is not None:
             lens = [
