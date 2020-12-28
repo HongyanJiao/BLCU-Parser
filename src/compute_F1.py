@@ -3,8 +3,8 @@ import trees
 import pandas as pd
 labels = ['ROOT', 'IP', 'NULL-HLP', 'VP-HLP',  'NP-HLP', 'VP-OBJ', 'UNK-OBJ',
           'NP-NPRE', 'NP-SBJ', 'VP-PRD', 'VP-SBJ', 'NP-OBJ',
-          'NULL-CON', 'UNK-SBJ', 'NULL-MOD', 'NULL-AUX',  'w-CON', 'w']
-print('label数量：', len(labels))
+          'NULL-CON', 'UNK-SBJ', 'NULL-MOD', 'NULL-AUX',  'w-CON']
+# print('label数量：', len(labels))
 def init_dict():
     return {label:0 for label in labels}
 class ChunkStruct(object):
