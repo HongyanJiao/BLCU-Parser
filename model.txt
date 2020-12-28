@@ -5,8 +5,7 @@ BLCUParser(
       (position_embeddings): Embedding(512, 768)
       (token_type_embeddings): Embedding(2, 768)
       (LayerNorm): BertLayerNorm()
-      (dropout): Dropout(p=0.1, inplace=False)
-    )
+      (dropout): Dropout(p=0.1, inplace=False))
     (encoder): BertEncoder(
       (layer): ModuleList(
         (0~11共12层): BertLayer(
@@ -15,29 +14,20 @@ BLCUParser(
               (query): Linear(in_features=768, out_features=768, bias=True)
               (key): Linear(in_features=768, out_features=768, bias=True)
               (value): Linear(in_features=768, out_features=768, bias=True)
-              (dropout): Dropout(p=0.1, inplace=False)
-            )
+              (dropout): Dropout(p=0.1, inplace=False))
             (output): BertSelfOutput(
               (dense): Linear(in_features=768, out_features=768, bias=True)
               (LayerNorm): BertLayerNorm()
-              (dropout): Dropout(p=0.1, inplace=False)
-            )
-          )
+              (dropout): Dropout(p=0.1, inplace=False)))
           (intermediate): BertIntermediate(
-            (dense): Linear(in_features=768, out_features=3072, bias=True)
-          )
+            (dense): Linear(in_features=768, out_features=3072, bias=True))
           (output): BertOutput(
             (dense): Linear(in_features=3072, out_features=768, bias=True)
             (LayerNorm): BertLayerNorm()
-            (dropout): Dropout(p=0.1, inplace=False)
-          )
-        )       
-    )
+            (dropout): Dropout(p=0.1, inplace=False))))
     (pooler): BertPooler(
       (dense): Linear(in_features=768, out_features=768, bias=True)
-      (activation): Tanh()
-    )
-  )
+      (activation): Tanh()))
   (project_bert): Linear(in_features=768, out_features=512, bias=False)
   (embedding): MultiLevelEmbedding(
     (embs): ModuleList()
@@ -45,19 +35,16 @@ BLCUParser(
     (extra_content_dropout): FeatureDropout()
     (layer_norm): LayerNormalization()
     (dropout): FeatureDropout()
-    (timing_dropout): FeatureDropout()
-  )
+    (timing_dropout): FeatureDropout())
   (encoder): Encoder(
-    (attn_0): MultiHeadAttention(
+    (attn_0 * attention层数): MultiHeadAttention(
       (attention): ScaledDotProductAttention(
         (dropout): Dropout(p=0.2, inplace=False)
-        (softmax): Softmax(dim=-1)
-      )
+        (softmax): Softmax(dim=-1))
       (layer_norm): LayerNormalization()
       (proj1): Linear(in_features=256, out_features=512, bias=False)
       (proj2): Linear(in_features=256, out_features=512, bias=False)
-      (residual_dropout): FeatureDropout()
-    )
+      (residual_dropout): FeatureDropout())
     (ff_0): PartitionedPositionwiseFeedForward(
       (w_1c): Linear(in_features=512, out_features=1024, bias=True)
       (w_1p): Linear(in_features=512, out_features=1024, bias=True)
@@ -66,33 +53,9 @@ BLCUParser(
       (layer_norm): LayerNormalization()
       (relu_dropout): FeatureDropout()
       (residual_dropout): FeatureDropout()
-      (relu): ReLU()
-    )
-    (attn_1): MultiHeadAttention(
-      (attention): ScaledDotProductAttention(
-        (dropout): Dropout(p=0.2, inplace=False)
-        (softmax): Softmax(dim=-1)
-      )
-      (layer_norm): LayerNormalization()
-      (proj1): Linear(in_features=256, out_features=512, bias=False)
-      (proj2): Linear(in_features=256, out_features=512, bias=False)
-      (residual_dropout): FeatureDropout()
-    )
-    (ff_1): PartitionedPositionwiseFeedForward(
-      (w_1c): Linear(in_features=512, out_features=1024, bias=True)
-      (w_1p): Linear(in_features=512, out_features=1024, bias=True)
-      (w_2c): Linear(in_features=1024, out_features=512, bias=True)
-      (w_2p): Linear(in_features=1024, out_features=512, bias=True)
-      (layer_norm): LayerNormalization()
-      (relu_dropout): FeatureDropout()
-      (residual_dropout): FeatureDropout()
-      (relu): ReLU()
-    )
-  )
+      (relu): ReLU())
   (f_label): Sequential(
     (0): Linear(in_features=1024, out_features=250, bias=True)
     (1): LayerNormalization()
     (2): ReLU()
-    (3): Linear(in_features=250, out_features=277, bias=True)
-  )
-)
+    (3): Linear(in_features=250, out_features=277, bias=True)))
