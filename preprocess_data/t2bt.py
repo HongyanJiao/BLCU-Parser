@@ -16,7 +16,8 @@ def binarize(tree):
 # t = Tree.fromstring('(ROOT (IP (NP-SBJ (ns 中国) (n 特色) (n 大国) (n 外交) (w ，)) (VP-PRD (vn 诠释)) (NP-OBJ (ns 中国) (n 格局) (u 的) (a 宏大)) (w (w 。))))')
 #t=t.reverse()
 # t.draw()
-t = Tree.fromstring('(NP-SBJ (tag (tag 中) (tag 国) ) (tag (tag 特) (tag 色)) (tag  (tag 大) (tag 国) ) (tag (tag 外) (tag 交)))')
+s = '(IP (NP-SBJ (ns 中国) (n 特色) (n 大国) (n 外交) (w ，)))'
+t = Tree.fromstring(s)
 t.chomsky_normal_form()
 
 # bt = binarize(t)
