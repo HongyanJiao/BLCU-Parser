@@ -128,7 +128,10 @@ def decode(force_gold, sentence_len, label_scores_chart, is_train, gold, label_v
         running_total += label_scores_chart[included_i[idx], included_j[idx], included_label[idx]]
 
     score = value_chart[0, sentence_len]
-    augment_amount = round(score - running_total) # 总体增强差值
+    try:
+        augment_amount = round(score - running_total) # 总体增强差值
+    except:
+        augment_amount = 0
     # 得分，左边界，右边界，label，增量
     return score, included_i.astype(int), included_j.astype(int), included_label.astype(int), augment_amount
 if __name__=='__main__':
