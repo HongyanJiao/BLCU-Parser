@@ -3,7 +3,7 @@ import trees
 import pandas as pd
 labels = ['ROOT', 'IP', 'NP-HLP', 'VP-HLP', 'NULL-HLP', 'NP-OBJ', 'VP-OBJ', 'UNK-OBJ',
            'NP-SBJ', 'VP-SBJ','UNK-SBJ', 'NP-NPRE','VP-PRD',
-            'NULL-MOD', 'NULL-AUX', 'NULL-CON', 'w-CON']
+            'NULL-MOD', 'NULL-AUX', 'NULL-CON', 'w-CON', 'W']
 tags38 = ['b', 'nz', 'q', 'h', 'v', 'p', 'm', 'ns', 's', 'j', 'k', 't', 'a', 'Dg', 'Ag', 'z', 'nx', 'o', 'vn', 'an', 'y', 'n', 'c', 'r', 'd', 'Vg', 'i', 'Tg', 'u', 'f', 'ad', 'vd', 'e', 'nr', 'nt', 'Ng', 'l']
 # print('label数量：', len(labels))
 def init_dict(labels):
@@ -184,13 +184,13 @@ if __name__=='__main__':
     dataframe = pd.DataFrame(out_array, columns = ['labels', 'Precision', 'Recall','F1', 'Num'])
     dataframe.to_csv(args.o, float_format = '%.4f', encoding='utf8')
     out_array1 = list()
-    for i in range(len(tags38)):
-        tmp_arr = [tags38[i], tF1[i][0], tF1[i][1], tF1[i][2], tinput_all[tags38[i]]]
+    # for i in range(len(tags38)):
+    #     tmp_arr = [tags38[i], tF1[i][0], tF1[i][1], tF1[i][2], tinput_all[tags38[i]]]
         # print('{}:{}个 p:{:.3f} r:{:.3f} f:{:.3f}'.format(labels[i],input_all[labels[i]], F1[i][0], F1[i][1], F1[i][2]))
-        out_array1.append(tmp_arr)
+        # out_array1.append(tmp_arr)
 
-    out_array1.append(['micro', tmicro_p, tmicro_r, tmicro_f, tall_input])
-    dataframe1 = pd.DataFrame(out_array1, columns=['tags', 'Precision', 'Recall', 'F1', 'Num'])
-    dataframe1.to_csv(args.o1, float_format='%.4f', encoding='utf8')
+    # out_array1.append(['micro', tmicro_p, tmicro_r, tmicro_f, tall_input])
+    # dataframe1 = pd.DataFrame(out_array1, columns=['tags', 'Precision', 'Recall', 'F1', 'Num'])
+    # dataframe1.to_csv(args.o1, float_format='%.4f', encoding='utf8')
 
 
