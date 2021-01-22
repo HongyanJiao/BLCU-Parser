@@ -3,7 +3,7 @@ import trees
 import pandas as pd
 labels = ['ROOT', 'IP', 'NP-HLP', 'VP-HLP', 'NULL-HLP', 'NP-OBJ', 'VP-OBJ', 'UNK-OBJ',
            'NP-SBJ', 'VP-SBJ','UNK-SBJ', 'NP-NPRE','VP-PRD',
-            'NULL-MOD', 'NULL-AUX', 'NULL-CON', 'w-CON', 'W']
+            'NULL-MOD', 'NULL-AUX', 'NULL-CON', 'w-CON', 'w']
 tags38 = ['b', 'nz', 'q', 'h', 'v', 'p', 'm', 'ns', 's', 'j', 'k', 't', 'a', 'Dg', 'Ag', 'z', 'nx', 'o', 'vn', 'an', 'y', 'n', 'c', 'r', 'd', 'Vg', 'i', 'Tg', 'u', 'f', 'ad', 'vd', 'e', 'nr', 'nt', 'Ng', 'l']
 # print('label数量：', len(labels))
 def init_dict(labels):
