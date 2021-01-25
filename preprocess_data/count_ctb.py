@@ -5,8 +5,8 @@ from nltk import Tree
 import argparse
 # import src.trees as trees
 import os
-import sys
-from ..src import trees
+
+import trees
 class Count(object):
     def __init__(self, file=None, dir=None):
         self.label_set = set()
