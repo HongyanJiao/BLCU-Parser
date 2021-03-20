@@ -216,9 +216,9 @@ def run_train(args, hparams):
     trainable_parameters = [param for param in parser.parameters() if param.requires_grad]
     total = sum([param.nelement() for param in trainable_parameters])
     print("Number of parameter: %.3fM" % (total / 1e6))
-    param_list = list(parser.named_parameters())
-    for i in param_list:
-        print(i[0], i[1].data.shape)
+    # param_list = list(parser.named_parameters())
+    # for i in param_list:
+    #     print(i[0], i[1].data.shape)
     trainer = torch.optim.Adam(trainable_parameters, lr=1., betas=(0.9, 0.98), eps=1e-9)
     if load_path is not None:
         trainer.load_state_dict(info['trainer'])
@@ -523,8 +523,8 @@ def main():
     subparser.add_argument("--numpy-seed", type=int)
     subparser.add_argument("--model-path-base", default='../../models/', required=False)
     subparser.add_argument("--evalb-dir", default="../EVALB/")
-    subparser.add_argument("--train-path", default="../data/train.small")
-    subparser.add_argument("--dev-path", default="../data/dev.small")
+    subparser.add_argument("--train-path", default="../../data/train.small")
+    subparser.add_argument("--dev-path", default="../../data/dev.small")
     subparser.add_argument("--batch-size", type=int, default=32)
     subparser.add_argument("--subbatch-max-tokens", type=int, default=2000)
     subparser.add_argument("--eval-batch-size", type=int, default=100)

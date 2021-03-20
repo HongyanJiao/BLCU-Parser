@@ -1527,10 +1527,11 @@ class NKChartParser(nn.Module):
         # generate trees, only scores and span indices. When converting to a
         # tree, we assume that the indices follow a preorder traversal.
         score, p_i, p_j, p_label, _ = chart_helper.decode(force_gold, **decoder_args)
+        print('self.current_attns:', self.current_attns.shape)
         if contributions is not None:
-            # d_l = (self.label_vocab.size - 2)
-            # mb_size = (self.current_attns.shape[0] // d_l)
-            print('SENTENCE', sentence)
+            d_l = (self.label_vocab.size - 2)
+            mb_size = (self.current_attns.shape[0] // d_l)
+            print('SENTENCE', sentence, 'mb_size', mb_size, 'd_l', d_l)
         idx = -1
         def make_tree():
             nonlocal idx
@@ -1542,8 +1543,8 @@ class NKChartParser(nn.Module):
                     print(i, sentence[i], j, sentence[j - 1], label, label_idx, contributions[i, j, label_idx - 1])
                     print("CONTRIBUTIONS")
                     print(list(enumerate(contributions[i, j])))
-                    # print("ATTENTION DIST")
-                    # print(torch.softmax(self.current_attns[sentence_idx::mb_size, 0, i:j + 1], -1))
+                    print("ATTENTION DIST")
+                    print(torch.softmax(self.current_attns[sentence_idx::mb_size, 0, i:j + 1], -1))
             if (i + 1) >= j:
                 tag, word = sentence[i]
                 tree = trees.LeafParseNode(int(i), tag, word)
