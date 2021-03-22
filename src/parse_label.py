@@ -1502,7 +1502,7 @@ class NKChartParser(nn.Module):
                     # print("ATTENTION DIST")
                     # print('self.current_attns:',
                     #       self.current_attns[sentence_idx::mb_size, 0, i:j + 1].shape)
-                    print(torch.softmax(self.current_attns[sentence_idx::mb_size, 0, i:j + 1], -1))
+                    # print(torch.softmax(self.current_attns[sentence_idx::mb_size, 0, i:j + 1], -1))
             if (i + 1) >= j:
                 tag, word = sentence[i]
                 tree = trees.LeafParseNode(int(i), tag, word)
