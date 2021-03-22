@@ -1499,7 +1499,7 @@ class NKChartParser(nn.Module):
                     print(i, sentence[i], j, sentence[j - 1], label, label_idx, contributions[i, j, label_idx - 1])
                     print("CONTRIBUTIONS")
                     print(list(enumerate(contributions[i, j])))
-                    print("ATTENTION DIST")
+                    # print("ATTENTION DIST")
                     # print('self.current_attns:',
                     #       self.current_attns[sentence_idx::mb_size, 0, i:j + 1].shape)
                     print(torch.softmax(self.current_attns[sentence_idx::mb_size, 0, i:j + 1], -1))
