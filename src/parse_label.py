@@ -168,7 +168,6 @@ class LayerNormalization(nn.Module):
         return ln_out
 
 # %%
-
 class ScaledDotProductAttention(nn.Module):
     def __init__(self, d_model, attention_dropout=0.1):
         super(ScaledDotProductAttention, self).__init__()
@@ -177,11 +176,15 @@ class ScaledDotProductAttention(nn.Module):
         self.softmax = nn.Softmax(dim=-1)
 
     def forward(self, q, k, v, attn_mask=None):
-        # q: [batch, slot, feat]
-        # k: [batch, slot, feat]
-        # v: [batch, slot, feat]
+        # q: [batch, slot, feat] or (batch * d_l) x max_len x d_k
+        # k: [batch, slot, feat] or (batch * d_l) x max_len x d_k
+        # v: [batch, slot, feat] or (batch * d_l) x max_len x d_v
+        # q in LAL is (batch * d_l) x 1 x d_k
 
-        attn = torch.bmm(q, k.transpose(1, 2)) / self.temper
+        attn = torch.bmm(q, k.transpose(1, 2)) / self.temper # (batch * d_l) x max_len x max_len
+        # in LAL, gives: (batch * d_l) x 1 x max_len
+        # attention weights from each word to each word, for each label
+        # in best model (repeated q): attention weights from label (as vector weights) to each word
 
         if attn_mask is not None:
             assert attn_mask.size() == attn.size(), \
@@ -197,7 +200,8 @@ class ScaledDotProductAttention(nn.Module):
         # dropout to the attention.
         # Note that the t2t code also applies dropout in this manner
         attn = self.dropout(attn)
-        output = torch.bmm(attn, v)
+        output = torch.bmm(attn, v) # (batch * d_l) x max_len x d_v
+        # in LAL, gives: (batch * d_l) x 1 x d_v
 
         return output, attn
 
@@ -1398,54 +1402,6 @@ class NKChartParser(nn.Module):
         else:
             return None, loss
 
-    def label_scores_from_annotations1(self, fencepost_annotations_start, fencepost_annotations_end):
-        # Note that the bias added to the final layer norm is useless because
-        # this subtraction gets rid of it
-        span_features = (torch.unsqueeze(fencepost_annotations_end, 0)
-                         - torch.unsqueeze(fencepost_annotations_start, 1))
-
-        label_scores_chart = self.f_label(span_features)
-        label_scores_chart = torch.cat([
-            label_scores_chart.new_zeros((label_scores_chart.size(0), label_scores_chart.size(1), 1)),
-            label_scores_chart
-            ], 2)
-        return label_scores_chart
-
-    def label_scores_from_annotations_backup(self, fencepost_annotations_start, fencepost_annotations_end):
-
-        span_features = (torch.unsqueeze(fencepost_annotations_end, 0)
-                         - torch.unsqueeze(fencepost_annotations_start, 1))
-
-        # if self.contributions and self.use_lal:
-        # contributions = np.zeros(
-        #     (span_features.shape[0], span_features.shape[1], span_features.shape[2] // self.lal_d_proj))
-        contributions = np.zeros(
-            (span_features.shape[0], span_features.shape[1], span_features.shape[2] // 128))
-        half_vector = span_features.shape[-1] // 2
-        # half_dim = self.lal_d_proj // 2
-        half_dim = 64
-        for i in range(contributions.shape[0]):
-            for j in range(contributions.shape[1]):
-                for l in range(contributions.shape[-1]):
-                    contributions[i, j, l] = span_features[i, j,
-                                             l * half_dim:(l + 1) * half_dim].sum() + span_features[i, j,
-                                                                                      half_vector + l * half_dim:half_vector + (
-                                                                                                  l + 1) * half_dim].sum()
-                contributions[i, j, :] = (contributions[i, j, :] - np.min(contributions[i, j, :]))
-                contributions[i, j, :] = (contributions[i, j, :]) / (
-                            np.max(contributions[i, j, :]) - np.min(contributions[i, j, :]))
-                # contributions[i,j,:] = contributions[i,j,:]/np.sum(contributions[i,j,:])
-        contributions = torch.softmax(torch.Tensor(contributions), -1)
-
-        label_scores_chart = self.f_label(span_features)
-        label_scores_chart = torch.cat([
-            label_scores_chart.new_zeros((label_scores_chart.size(0), label_scores_chart.size(1), 1)),
-            label_scores_chart
-        ], 2)
-        # if self.contributions and self.use_lal:
-        #     return label_scores_chart, contributions
-        return label_scores_chart
-
     def label_scores_from_annotations(self, fencepost_annotations_start, fencepost_annotations_end):
 
         span_features = (torch.unsqueeze(fencepost_annotations_end, 0)
@@ -1544,6 +1500,8 @@ class NKChartParser(nn.Module):
                     print("CONTRIBUTIONS")
                     print(list(enumerate(contributions[i, j])))
                     print("ATTENTION DIST")
+                    # print('self.current_attns:',
+                    #       self.current_attns[sentence_idx::mb_size, 0, i:j + 1].shape)
                     print(torch.softmax(self.current_attns[sentence_idx::mb_size, 0, i:j + 1], -1))
             if (i + 1) >= j:
                 tag, word = sentence[i]
