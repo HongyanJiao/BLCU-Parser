@@ -1422,6 +1422,7 @@ class NKChartParser(nn.Module):
                     contributions[i, j, :] = (contributions[i, j, :] - np.min(contributions[i, j, :]))
                     contributions[i, j, :] = (contributions[i, j, :]) / (
                                 np.max(contributions[i, j, :]) - np.min(contributions[i, j, :]))
+                    # min-max 归一化
                     # contributions[i,j,:] = contributions[i,j,:]/np.sum(contributions[i,j,:])
             contributions = torch.softmax(torch.Tensor(contributions), -1)
 
