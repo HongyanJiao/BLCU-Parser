@@ -1496,9 +1496,14 @@ class NKChartParser(nn.Module):
             label = self.label_vocab.value(label_idx)
             if contributions is not None:
                 if label_idx > 0:
-                    print(i, sentence[i], j, sentence[j - 1], label, label_idx, contributions[i, j, label_idx - 1])
-                    print("CONTRIBUTIONS:", end='\t')
-                    print(list(enumerate(contributions[i, j])))
+                    contributions_list = list(contributions[i, j])
+                    # print(contributions_list)
+                    max_head = contributions_list.index(max(contributions_list))
+                    print(label,'\t',label_idx, '\t',max_head)
+                    # print(i, sentence[i], j, sentence[j - 1], label, label_idx, contributions[i, j, label_idx - 1])
+
+                    # print("CONTRIBUTIONS:", end='\t')
+                    # print(list(enumerate(contributions[i, j])))
                     # print("ATTENTION DIST")
                     # print('self.current_attns:',
                     #       self.current_attns[sentence_idx::mb_size, 0, i:j + 1].shape)
