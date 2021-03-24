@@ -944,8 +944,8 @@ class NKChartParser(nn.Module):
             self.lal_partitioned = hparams.lal_partitioned
             self.lal_combine_as_self = hparams.lal_combine_as_self
 
-        # self.contributions = False
-        self.contributions = True
+        self.contributions = False
+        # self.contributions = True
 
         num_embeddings_map = {
             'tags': tag_vocab.size,
